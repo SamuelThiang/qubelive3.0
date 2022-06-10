@@ -12,6 +12,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { Device } from '@awesome-cordova-plugins/device/ngx';
 import { NgChartsModule } from 'ng2-charts';
 import { Keyboard } from '@awesome-cordova-plugins/keyboard/ngx';
+import { NativeStorage } from '@ionic-native/native-storage/ngx';
 @NgModule({
   declarations: [AppComponent],
   entryComponents: [],
@@ -20,7 +21,7 @@ import { Keyboard } from '@awesome-cordova-plugins/keyboard/ngx';
     scrollAssist: true,
     scrollPadding: true,
 }), AppRoutingModule, BrowserAnimationsModule,NgApexchartsModule,HttpClientModule,NgChartsModule],
-  providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },Device,Keyboard],
+  providers: [NativeStorage,{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },Device,Keyboard],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Device } from '@awesome-cordova-plugins/device/ngx';
 import { NavController, ToastController } from '@ionic/angular';
 import { AuthGuardService } from '../services/auth.guard';
-
+import { NativeStorage } from '@ionic-native/native-storage/ngx';
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
@@ -12,8 +12,30 @@ import { AuthGuardService } from '../services/auth.guard';
 export class LoginPage implements OnInit {
   inputEmail = '';
   inputPass = '';
+  remembercheck: boolean = false;
 
-  constructor(private auth:AuthGuardService,private http: HttpClient,private device: Device,private nav:NavController,private toastController:ToastController) { }
+  constructor(private auth:AuthGuardService,
+    private http: HttpClient,
+    private device: Device,
+    private nav:NavController,
+    private toastController:ToastController,
+    private nativeStorage: NativeStorage) 
+  {
+    this.nativeStorage.getItem('rmbacc')
+    .then(
+      data => {
+        if (data != '') {
+          this.inputEmail = data.id;
+          this.inputPass = data.pass;
+          this.remembercheck = data.ischeck;
+          this.nav.navigateRoot('tabs');
+          this.presentToast('LOGIN SUCCESSFUL');
+        }
+      },
+      error => console.error("empty user & pass :", error)
+    );
+
+  }
 
   ngOnInit() {
   }
@@ -34,6 +56,23 @@ export class LoginPage implements OnInit {
     };
 
     this.http.post('https://qubelive.com.my/QubeSR/User/login.php', postData.toString(), httpOptions).subscribe((response: any) => {
+
+      if (this.remembercheck) {
+        this.nativeStorage.setItem('rmbacc', { 'id': this.inputEmail, 'pass': this.inputPass, 'ischeck': 'true' })
+          .then(
+            () => console.log('Remember Account!'),
+            error => console.error('Remember Account Failed', error)
+          );
+          console.log("check login",this.nativeStorage.getItem('rmbacc'))
+      } else {
+        this.nativeStorage.remove('rmbacc')
+          .then(
+            () => console.log('Removed Account!'),
+            error => console.error('Removed Account Failed', error)
+          );
+          console.log("nocheck login")
+      }
+
       if(response.status == '1'){
         response.email = this.inputEmail;
         response.imei =this.device.uuid;
@@ -50,6 +89,7 @@ export class LoginPage implements OnInit {
     }, error => {
       this.presentToast('LOGIN FAILED : '+ error);
     });
+
   }
    //READ REPORTLIST FROM SERVER & SAVE TO SQLITE
    async dlReportList(path) {
@@ -71,6 +111,16 @@ export class LoginPage implements OnInit {
       console.error(error);
     });
   }
+
+  rememberme(event) {
+    if (event.target.checked) {
+      this.remembercheck = true;
+
+    } else {
+      this.remembercheck = false;
+    }
+  }
+
   //READ STORELIST FROM SERVER & SAVE TO SQLITE
   async dlStoreList(path) {
     let postData = new URLSearchParams();

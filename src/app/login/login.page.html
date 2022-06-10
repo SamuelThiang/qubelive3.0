@@ -20,13 +20,16 @@
         <mat-label>Email / Username</mat-label>
         <input matInput [(ngModel)]="inputEmail">
       </mat-form-field>
-      <mat-form-field style="width:100%;" appearance="outline">
+      <mat-form-field style="width:100%;height:80px ;" appearance="outline">
         <mat-icon matPrefix>lock</mat-icon>
         <mat-label >Password</mat-label>
         <input matInput type="password" [(ngModel)]="inputPass">
       </mat-form-field>
+      <ion-item lines="none" class="checkbox">
+        <ion-checkbox checked={{remembercheck}} ([ngModel])="remembercheck" (ionChange)="rememberme($event)" ></ion-checkbox>
+        <ion-label style="padding-left: 1%;">Remember me</ion-label>
+      </ion-item>
       <button (click)="presentAlert()" mat-flat-button style="border-radius: 40px;width:70%;height:50px;margin-top: 50px;background: #bf2025;color: white;font-weight: bold;">Login</button>
-
     </ion-card-content>
   </ion-card>
   <!-- <svg style="    padding-bottom: 0px;
@@ -37,4 +40,7 @@
     </path>
   </svg> -->
 </ion-content>
+<!-- <ion-footer no-border transparent class="ion-text-center">
+  <ion-text style="color: black; font-size: 0.6rem " >Copyright &copy; by Qube Apps Solutions Sdn Bhd</ion-text>
+</ion-footer> -->
 
