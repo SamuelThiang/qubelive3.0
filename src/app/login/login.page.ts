@@ -63,7 +63,7 @@ export class LoginPage implements OnInit {
             () => console.log('Remember Account!'),
             error => console.error('Remember Account Failed', error)
           );
-          console.log("check login",this.nativeStorage.getItem('rmbacc'))
+          //console.log("check login",this.nativeStorage.getItem('rmbacc'))
       } else {
         this.nativeStorage.remove('rmbacc')
           .then(
@@ -81,6 +81,7 @@ export class LoginPage implements OnInit {
         localStorage.setItem('qubelive_user',JSON.stringify(response))
         this.dlReportList(response.path);
         this.nav.navigateRoot('tabs');
+        console.log(JSON.stringify(response))
         this.presentToast('LOGIN SUCCESSFUL');
       }else{
         this.presentToast('USER NOT FOUND');
@@ -140,6 +141,7 @@ export class LoginPage implements OnInit {
       console.error(error);
     });
   }
+
   async presentToast(msg) {
     const toast = await this.toastController.create({
       message: msg,

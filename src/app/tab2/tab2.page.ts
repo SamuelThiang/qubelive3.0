@@ -107,6 +107,7 @@ export class Tab2Page {
     });
     await alert.present();
   }
+
   async changePwd(newPass,email){
     this.loading = await this.loadingController.create({
       message: 'Changing Password...',
@@ -117,7 +118,7 @@ export class Tab2Page {
     postData.append('email', email);
     postData.append('password', newPass);
 
-    console.log(email.newPass);
+    console.log("chcek email.newpass",email,newPass);
 
     const httpOptions = {
       headers: new HttpHeaders({
@@ -142,6 +143,7 @@ export class Tab2Page {
       this.loading.dismiss();
     }, 10000);
   }
+
   async resultAlert(header, msg) {
     const alert = await this.alertCtrl.create({
       header: header,

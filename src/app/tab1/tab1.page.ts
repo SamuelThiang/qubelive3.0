@@ -8,6 +8,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as moment from 'moment';
 import { FilteroutletPage } from '../filteroutlet/filteroutlet.page'
 import { Tab2Page } from '../tab2/tab2.page'
+import { empty } from 'rxjs';
 @Component({
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
@@ -47,6 +48,7 @@ export class Tab1Page {
       { data: [], label: 'TOTAL SALES', backgroundColor: '#9d0000' },
     ]
   };
+
   slideOptsTwo = {
     initialSlide: 1,
     slidesPerView: 4,
@@ -75,6 +77,7 @@ export class Tab1Page {
   currentDate = moment().format('YYMMDD');
   unformatcurrentDate = moment().format('YYYY-MM-DD')
   maxDate = moment().format('YYYY-MM-DD');
+  favOutletArr = [];
   getprevMonths() {
     var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     var todaysDate = new Date();
@@ -91,46 +94,72 @@ export class Tab1Page {
     setTimeout(async() => {
       this.reportType =await JSON.parse(localStorage.getItem('qubelive_report'));
       let tmpstore = await JSON.parse(localStorage.getItem('qubelive_store'));
-      for (let i of tmpstore) {
-        i.status = true;
+      let data = await JSON.parse(localStorage.getItem('qubelive_user'));
+       this.favOutletArr = data.favOutlet
+
+      //const filteredArray = favOutletArr.filter(value => tmpstore.includes(value));
+      if(data.favOutlet != "")
+      {
+        for(let i of tmpstore)
+        {
+          //console.log(i)
+          if(this.favOutletArr.includes(i.id)){
+          i.flavorite = true;
+          i.status = false;
+          }else{
+            i.flavorite = false;
+            i.status = false;
+          }
+        }
       }
+      else
+      {
+        for(let i of tmpstore)
+        {
+            i.flavorite = false;
+            i.status = true;
+        }
+      }
+      
       this.storeList = tmpstore;
-  
+      console.log("favOutletArr",this.favOutletArr)
       this.getAllsales();
     },1000)
   }
 
 ionViewDidEnter() {
-
-   
   
   }
 
   async getAllsales() {
     this.presentLoading();
-    var names = this.storeList.filter(res => res.status == true).map((item) => {
+    var names = this.storeList.filter(res => res.status == true || res.flavorite == true).map((item) => {
       return item['value'];
     });
+    console.log("test",this.storeList)
     this.txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
 
     let yesterday = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
+
+    //Get Top SALES
     await this.getReport(this.currentDate, this.currentDate, 'SALES', names).then(async (res: any) => {
       this.txt_totalsales = await parseFloat(this.countTotalSales(res));
       this.txt_totaltrx = await this.countTotalTrx(res);
       this.txt_topOutlet = await this.countTopOutlet(res);
       this.top10 = await this.countTop10Outlet(res);
-
+      //console.log("totalsales,totaltrx,totaloutlet",this.txt_totalsales,this.txt_totaltrx,this.txt_topOutlet,this.top10)
       this.barChartData.labels = this.top10.map((label) => { return label['Desc'] });
       this.barChartData.datasets = [{
         data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
         label: 'TOTAL SALES',
         backgroundColor: '#9d0000'
       }]
+      //console.log("sales name",names)
     });
-    this.chart.update();
+
     await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
       let tmpsales = await parseFloat(this.countTotalSales(res2));
       let tmptrx = await this.countTotalTrx(res2);
@@ -141,26 +170,30 @@ ionViewDidEnter() {
     await this.getReport(this.currentDate, this.currentDate, 'DEPARTMENT', names).then(async (res: any) => {
       this.txt_topDept = await this.getTopDepart(res);
     });
+
     //Get Top Sku
     await this.getReport(this.currentDate, this.currentDate, 'SKU', names).then(async (res: any) => {
       if(res){
         this.txt_topSku = await this.getTopSku(res);
       }
+      //console.log(this.txt_topSku)
     });
     //Get Top Hour
     await this.getReport(this.currentDate, this.currentDate, 'HOURLY', names).then(async (res: any) => {
       this.txt_topHour = await this.getTopHour(res);
     });
-
+    //console.log(this.txt_topHour)
+    this.chart.update();
     this.loadingController.dismiss();
   }
 
   async segmentChanged(tabs) {
     this.presentLoading();
-    var names = this.storeList.filter(res => res.status == true).map((item) => {
+    var names = this.storeList.filter(res => res.status == true || res.flavorite == true).map((item) => {
       return item['value'];
     });
-    console.log( this.storeList)
+    //console.log("first name",names)
+    //console.log("check name",names)
     this.currentRange = tabs;
     // let today = moment().format('YYMMDD');
     let type = '';
@@ -185,6 +218,7 @@ ionViewDidEnter() {
               label: 'TOTAL '+type,
               backgroundColor: '#9d0000'
             }]
+            //console.log("check..",this.getReport(this.currentDate, this.currentDate, type, names))
           }else{
             this.top10 = [];
             this.barChartData.labels =[];
@@ -194,7 +228,6 @@ ionViewDidEnter() {
               backgroundColor: '#9d0000'
             }]
           }
-   
         });
         break;
       case 'week':
@@ -253,6 +286,7 @@ ionViewDidEnter() {
   changeType(type){
     this.currentType = type;
     this.segmentChanged(this.currentRange);
+
   }
 
  async showProfile(){
@@ -270,7 +304,6 @@ ionViewDidEnter() {
   slidechanged(event) {
     this.slides.getActiveIndex().then(result => {
       // console.log(moment().month(result).format("MM"))
-      
     });
   }
 
@@ -331,10 +364,12 @@ ionViewDidEnter() {
     for (let i of res) {
       countTrx = countTrx + parseInt(i.Trx);
     }
+    //console.log("totaltrx",res)
     return countTrx;
   }
 
   countTotalSales(res) {
+    //console.log("res",res)
     var result = [];
     var counttotal = 0;
     res.reduce((res, value) => {
@@ -352,6 +387,7 @@ ionViewDidEnter() {
   }
 
   countTopOutlet(res) {
+
     var result = [];
     res.reduce((res, value) => {
       if (!res[value.Code]) {
@@ -376,6 +412,7 @@ ionViewDidEnter() {
       res[value.Code].Net += parseFloat(value.Net);
       return res;
     }, {});
+    //console.log(result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10))
     return result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10);
   }
 
@@ -399,6 +436,8 @@ ionViewDidEnter() {
     if (data) {
       this.storeList = data.storeList;
       this.getAllsales();
+      this.segmentChanged('day')
+      //console.log("selectchaste",this.storeList)
     }
   }
 
@@ -456,6 +495,5 @@ ionViewDidEnter() {
       })
     };
     return this.http.post('https://qubelive.com.my/QubeSR/User/salereportAll.php', postData.toString(), httpOptions).toPromise();
-
   }
 }
