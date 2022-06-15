@@ -19,7 +19,7 @@
   </ion-row>
   <ion-list>
     <ion-list-header>All Store</ion-list-header>
-    <div *ngFor="let store of storeList;let i = index">
+    <div *ngFor="let store of storeList ;let i = index">
     <ion-card class="ion-no-margin" style="margin:5px" *ngIf="store.status == false && store.flavorite == false">
       <ion-item>
         <ion-label>

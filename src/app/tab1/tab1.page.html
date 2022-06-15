@@ -18,10 +18,8 @@
           <ion-label >
             {{unformatcurrentDate}}
           </ion-label>
-        
           <ion-icon size="small" slot="end" name="caret-down-outline"></ion-icon>
         </ion-item>
-
       </div>
       <ion-buttons slot="secondary">
         <ion-button (click)="showProfile()"> 
@@ -42,17 +40,34 @@
       <ion-icon [name]="salespercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
     </ion-badge>
   </ion-card>
-  <ion-card style="max-height: 80px;margin: 10px;">
-    <ion-label>
-      <p>TOTAL TRANSACTION</p>
-      <h1 style="color:#555;font-weight:bold">{{txt_totaltrx}}</h1>
-    </ion-label>
-    <ion-badge style="position:absolute;right:10px;bottom:10px;" [style.background]="trxpercent > 0 ? 'green' : 'red'">
+  <ion-row>
+    <ion-col size="6" class="ion-no-margin ion-no-padding">
+      <ion-card style="max-height: 80px;margin:2px;">
+        <ion-label>
+          <p style="font-size:12px;">TOTAL TRANSACTION</p>
+          <h1 style="color:#555;font-weight:bold">{{txt_totaltrx}}</h1>
+        </ion-label>
+        <ion-badge style="position:absolute;right:17px;bottom:25px;" [style.background]="trxpercent > 0 ? 'green' : 'red'">
+          <ion-label>{{trxpercent}}%</ion-label>
+          <ion-icon [name]="trxpercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+        </ion-badge>
+      </ion-card>
+    </ion-col>
+    <ion-col size="6" class="ion-no-margin ion-no-padding">
+      <ion-card style="max-height: 80px;margin:2px;">
+        <ion-label>
+          <p style="font-size:12px;">AVERAGE TRANSACTION</p>
+          <h1 style="color:#555;font-weight:bold">MYR {{txt_avgtrx}}</h1>
+        </ion-label>
+        <!-- <ion-badge style="position:absolute;right:17px;bottom:25px;" [style.background]="trxAvgpercent > 0 ? 'green' : 'red'">
+          <ion-label>{{trxAvgpercent}}%</ion-label>
+          <ion-icon [name]="trxAvgpercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+        </ion-badge> -->
+      </ion-card>
+    </ion-col>
+  </ion-row>
+ 
 
-      <ion-label>{{trxpercent}}%</ion-label>
-      <ion-icon [name]="trxpercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
-    </ion-badge>
-  </ion-card>
   <ion-grid>
     <ion-row>
       <ion-col size="6">

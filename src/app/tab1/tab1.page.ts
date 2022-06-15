@@ -61,11 +61,13 @@ export class Tab1Page {
   activeIndex: number = 0;
   txt_totalsales = 0;
   txt_totaltrx = 0;
+  txt_avgtrx = 0;
   reportType = [];
   storeList = [];
   topOutlet = {};
   salespercent = 0;
   trxpercent = 0;
+  trxAvgpercent = 0;
   txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
   txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
   txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
@@ -141,13 +143,14 @@ ionViewDidEnter() {
     this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
-
+    
     let yesterday = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
 
     //Get Top SALES
     await this.getReport(this.currentDate, this.currentDate, 'SALES', names).then(async (res: any) => {
       this.txt_totalsales = await parseFloat(this.countTotalSales(res));
       this.txt_totaltrx = await this.countTotalTrx(res);
+      this.txt_avgtrx = await this.countAvgTrx(res);
       this.txt_topOutlet = await this.countTopOutlet(res);
       this.top10 = await this.countTop10Outlet(res);
       //console.log("totalsales,totaltrx,totaloutlet",this.txt_totalsales,this.txt_totaltrx,this.txt_topOutlet,this.top10)
@@ -158,12 +161,14 @@ ionViewDidEnter() {
         backgroundColor: '#9d0000'
       }]
       //console.log("sales name",names)
+     
     });
 
     await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
       let tmpsales = await parseFloat(this.countTotalSales(res2));
       let tmptrx = await this.countTotalTrx(res2);
-      this.cuculatePercent(tmpsales, tmptrx);
+      let tmpavgTrx = await this.countAvgTrx(res2); 
+      this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx);
     })
 
     //Get Top DEPTARTMENT
@@ -181,6 +186,8 @@ ionViewDidEnter() {
     //Get Top Hour
     await this.getReport(this.currentDate, this.currentDate, 'HOURLY', names).then(async (res: any) => {
       this.txt_topHour = await this.getTopHour(res);
+      this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+      //this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
     });
     //console.log(this.txt_topHour)
     this.chart.update();
@@ -212,13 +219,13 @@ ionViewDidEnter() {
         await this.getReport(this.currentDate, this.currentDate, type, names).then(async (res: any) => {
           if(res){
             this.top10 = await this.countTop10Outlet(res);
+            console.log(this.top10)
             this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
             this.barChartData.datasets = [{
               data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
               label: 'TOTAL '+type,
               backgroundColor: '#9d0000'
             }]
-            //console.log("check..",this.getReport(this.currentDate, this.currentDate, type, names))
           }else{
             this.top10 = [];
             this.barChartData.labels =[];
@@ -256,6 +263,7 @@ ionViewDidEnter() {
         case 'month':
           let monthstart = moment().startOf('month').format('YYMMDD');
           let monthend = moment().endOf('month').format('YYMMDD');
+          console.log("date",monthstart,monthend)
           await this.getReport(monthstart, monthend, type, names).then(async (res: any) => {
             if(res){
               this.top10 = await this.countTop10Outlet(res);
@@ -351,12 +359,14 @@ ionViewDidEnter() {
     }, {});
     let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
     final.Net = final.Net.toFixed(2)
+    console.log("hour final",moment(final.Code, ["HH.mm"]).format("hh:mm a"))
     return final;
   }
 
-  cuculatePercent(tmpsales, tmptrx) {
+  cuculatePercent(tmpsales, tmptrx,tmpavgTrx) {
     this.salespercent = parseInt(((1 - (tmpsales / this.txt_totalsales)) * 100).toString());
     this.trxpercent = parseInt(((1 - (tmptrx / this.txt_totaltrx)) * 100).toString());
+    this.trxAvgpercent = parseInt(((1 - (tmpavgTrx / this.txt_avgtrx)) * 100).toString());
   }
 
   countTotalTrx(res) {
@@ -364,8 +374,18 @@ ionViewDidEnter() {
     for (let i of res) {
       countTrx = countTrx + parseInt(i.Trx);
     }
-    //console.log("totaltrx",res)
+    console.log("totaltrx",res)
     return countTrx;
+  }
+
+  countAvgTrx(res) {
+    var AvgTrx = 0;
+    AvgTrx = this.txt_totalsales/this.txt_totaltrx;
+    console.log("totaltrx",AvgTrx.toFixed())
+    console.log("totaltrx",this.txt_totaltrx)
+    console.log("totalsales",this.txt_totalsales)
+    var countAvgTrx = Number(AvgTrx.toFixed(2));
+    return countAvgTrx
   }
 
   countTotalSales(res) {
@@ -387,7 +407,6 @@ ionViewDidEnter() {
   }
 
   countTopOutlet(res) {
-
     var result = [];
     res.reduce((res, value) => {
       if (!res[value.Code]) {
@@ -406,14 +425,17 @@ ionViewDidEnter() {
     var result = [];
     res.reduce((res, value) => {
       if (!res[value.Code]) {
-        res[value.Code] = { Desc: value.Desc, Code: value.Code, Net: 0 };
+        res[value.Code] = { Desc: value.Desc, Code: moment(value.Code, ["HH.mm"]).format("hh:mm a"), Net: 0 };
         result.push(res[value.Code])
+        //console.log("check value.code",res[value.Code].Code)
       }
       res[value.Code].Net += parseFloat(value.Net);
       return res;
     }, {});
-    //console.log(result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10))
+    //console.log("check result",result)
+    //console.log("check result2", result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10))
     return result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10);
+  
   }
 
   onClickSlide(id,month) {
@@ -478,6 +500,7 @@ ionViewDidEnter() {
     this.unformatcurrentDate = moment(date).format('YYYY-MM-DD');
       this.currentDate = moment(date).format('YYMMDD');
       this.getAllsales();
+      this.segmentChanged('day');
   }
 
   async getReport(StartDate, EndDate, ReportType, outletArray) {
