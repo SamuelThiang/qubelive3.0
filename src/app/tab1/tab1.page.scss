@@ -1,4 +1,27 @@
+.scroll-content {
+    padding-top: 0px !important;
+  }
 
+.popover-datetime::part(content) { width: 80vw !important;background: transparent; }
+
+.topten
+{
+  font-size: 20px;
+  margin-top:3%;
+  padding-left: 10px;
+  font-weight: bold;
+  align-items:center;
+  display:flex;
+}
+.inputvalue
+{
+  max-width: 20%;
+  text-align: center;
+  --padding-top:0px !important;
+  --padding-end:0px !important;
+  --padding-bottom:0px !important;
+  --padding-start:0px !important;
+}
 .box4{
     ion-label{
         p{

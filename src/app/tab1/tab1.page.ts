@@ -3,12 +3,14 @@ import { ChartConfiguration, ChartData, ChartEvent, ChartType } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
 import DataLabelsPlugin from 'chartjs-plugin-datalabels';
-import { IonSlides, LoadingController, ModalController } from '@ionic/angular';
+import { IonSlides, LoadingController, ModalController, PickerColumn, PickerColumnOption, PickerOptions } from '@ionic/angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as moment from 'moment';
 import { FilteroutletPage } from '../filteroutlet/filteroutlet.page'
 import { Tab2Page } from '../tab2/tab2.page'
 import { empty } from 'rxjs';
+import { PickerController } from '@ionic/angular';
+
 @Component({
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
@@ -39,6 +41,7 @@ export class Tab1Page {
     }
   };
   public barChartType: ChartType = 'bar';
+
   public barChartPlugins = [
     DataLabelsPlugin
   ];
@@ -55,23 +58,32 @@ export class Tab1Page {
     centeredSlides: true,
     spaceBetween: 0
   };
+
   montharr = this.getprevMonths();
   @ViewChild('slides', { read: IonSlides }) slides: IonSlides;
   DateRange = 'day';
   activeIndex: number = 0;
+  AvgTrx: number = 0;
   txt_totalsales = 0;
+  qtn :number = 10;
+  TdyTop3Outlet =[];
   txt_totaltrx = 0;
   txt_avgtrx = 0;
+  totalsales_dec = "";
+  topOutletNet_dec = "";
+  numberArray = [];
   reportType = [];
   storeList = [];
   topOutlet = {};
   salespercent = 0;
   trxpercent = 0;
   trxAvgpercent = 0;
+  Top3OutletPercent =[];
   txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
   txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
   txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
-  txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
+  txt_topHour = { Desc: '-', Code:'-', Net: 0.00 };
+  changefor ={};
   top10 = [];
   top10week = [];
   currentType = 'OUTLET';
@@ -92,13 +104,13 @@ export class Tab1Page {
     return tmparr.reverse();
   }
 
-  constructor(private http: HttpClient, public modalController: ModalController, private loadingController: LoadingController) {
+  constructor(private http: HttpClient, public modalController: ModalController, private loadingController: LoadingController,private pickerController: PickerController) {
     setTimeout(async() => {
       this.reportType =await JSON.parse(localStorage.getItem('qubelive_report'));
       let tmpstore = await JSON.parse(localStorage.getItem('qubelive_store'));
       let data = await JSON.parse(localStorage.getItem('qubelive_user'));
-       this.favOutletArr = data.favOutlet
-
+      this.favOutletArr = data.favOutlet
+      
       //const filteredArray = favOutletArr.filter(value => tmpstore.includes(value));
       if(data.favOutlet != "")
       {
@@ -124,13 +136,14 @@ export class Tab1Page {
       }
       
       this.storeList = tmpstore;
-      console.log("favOutletArr",this.favOutletArr)
+      //console.log("favOutletArr",this.favOutletArr)
       this.getAllsales();
     },1000)
   }
 
 ionViewDidEnter() {
-  
+  this.getAllsales();
+  this.segmentChanged(this.currentRange);
   }
 
   async getAllsales() {
@@ -138,37 +151,44 @@ ionViewDidEnter() {
     var names = this.storeList.filter(res => res.status == true || res.flavorite == true).map((item) => {
       return item['value'];
     });
-    console.log("test",this.storeList)
+    //console.log("test",this.storeList)
     this.txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
-    this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
+    this.txt_topHour = { Desc: '-', Code:'-', Net: 0.00 };
     
     let yesterday = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
 
     //Get Top SALES
     await this.getReport(this.currentDate, this.currentDate, 'SALES', names).then(async (res: any) => {
       this.txt_totalsales = await parseFloat(this.countTotalSales(res));
+      this.totalsales_dec = this.txt_totalsales.toLocaleString();
       this.txt_totaltrx = await this.countTotalTrx(res);
       this.txt_avgtrx = await this.countAvgTrx(res);
       this.txt_topOutlet = await this.countTopOutlet(res);
       this.top10 = await this.countTop10Outlet(res);
-      //console.log("totalsales,totaltrx,totaloutlet",this.txt_totalsales,this.txt_totaltrx,this.txt_topOutlet,this.top10)
+      this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+        return item['Net'];
+      });
+      console.log("today top 3",this.TdyTop3Outlet)
       this.barChartData.labels = this.top10.map((label) => { return label['Desc'] });
       this.barChartData.datasets = [{
         data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
         label: 'TOTAL SALES',
         backgroundColor: '#9d0000'
-      }]
-      //console.log("sales name",names)
-     
+      }] 
     });
 
     await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
       let tmpsales = await parseFloat(this.countTotalSales(res2));
       let tmptrx = await this.countTotalTrx(res2);
       let tmpavgTrx = await this.countAvgTrx(res2); 
-      this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx);
+      this.top10 = await this.countTop10Outlet(res2);
+      let tmpOutlettop3 = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+        return item['Net'];
+      });
+      this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx,tmpOutlettop3);
+      console.log("yesterday top 3",tmpOutlettop3)
     })
 
     //Get Top DEPTARTMENT
@@ -189,7 +209,7 @@ ionViewDidEnter() {
       this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
       //this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
     });
-    //console.log(this.txt_topHour)
+    //console.log("check txt.code",this.txt_topHour.Code)
     this.chart.update();
     this.loadingController.dismiss();
   }
@@ -216,63 +236,278 @@ ionViewDidEnter() {
 
     switch (tabs) {
       case 'day':
+        let yesterday = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
+
+        await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
+          let tmpsales = await parseFloat(this.countTotalSales(res2));
+          let tmptrx = await this.countTotalTrx(res2);
+          let tmpavgTrx = await this.countAvgTrx(res2); 
+          this.top10 = await this.countTop10Outlet(res2);
+          let tmpOutlettop3 = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+            return item['Net'];
+          });
+          this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx,tmpOutlettop3);
+          console.log("yesterday top 3",tmpOutlettop3,yesterday)
+        })
         await this.getReport(this.currentDate, this.currentDate, type, names).then(async (res: any) => {
           if(res){
-            this.top10 = await this.countTop10Outlet(res);
-            console.log(this.top10)
-            this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
-            this.barChartData.datasets = [{
-              data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-              label: 'TOTAL '+type,
-              backgroundColor: '#9d0000'
-            }]
-          }else{
-            this.top10 = [];
-            this.barChartData.labels =[];
-            this.barChartData.datasets = [{
-              data: [],
-              label: 'TOTAL '+type,
-              backgroundColor: '#9d0000'
-            }]
-          }
-        });
-        break;
-      case 'week':
-        let lastweekDate = moment().subtract(7, "days").format('YYMMDD');
-        await this.getReport(lastweekDate, this.currentDate, type, names).then(async (res: any) => {
-          if(res){
-            this.top10 = await this.countTop10Outlet(res);
-            this.barChartData.labels = this.top10.map((label) => {return type=='HOURLY' ? label['Code'] : label['Desc']  });
-            this.barChartData.datasets = [{
-              data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-              label: 'TOTAL '+type,
-              backgroundColor: '#9d0000'
-            }]
-          }else{
-            this.top10 = [];
-            this.barChartData.labels =[];
-            this.barChartData.datasets = [{
-              data: [],
-              label: 'TOTAL '+type,
-              backgroundColor: '#9d0000'
-            }]
-          }
-        
-        });
-        break;
-        case 'month':
-          let monthstart = moment().startOf('month').format('YYMMDD');
-          let monthend = moment().endOf('month').format('YYMMDD');
-          console.log("date",monthstart,monthend)
-          await this.getReport(monthstart, monthend, type, names).then(async (res: any) => {
-            if(res){
+            if(type=='SALES')
+            {
               this.top10 = await this.countTop10Outlet(res);
-              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc']  });
+              this.txt_totalsales = await parseFloat(this.countTotalSales(res));
+              this.totalsales_dec = this.txt_totalsales.toLocaleString();
+              this.txt_totaltrx = await this.countTotalTrx(res);
+              this.txt_avgtrx = await this.countAvgTrx(res);
+              this.txt_topOutlet = await this.countTopOutlet(res);
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet)
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
               this.barChartData.datasets = [{
                 data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
                 label: 'TOTAL '+type,
                 backgroundColor: '#9d0000'
+               }] 
+               //console.log("check this 1",res)
+            }
+            if(type=='HOURLY')
+            {
+              this.top10 = await this.countTop10Outlet(res);
+              var top10h = await this.countTop10Hour(res);
+              this.txt_topHour = await this.getTopHour(res);
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet)
+              this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+              this.barChartData.labels = top10h.map((label) => { return type=='HOURLY' ? moment(label.Code, ["HH.mm"]).format("h a") : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: top10h.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
               }]
+            }
+            if(type=='DEPARTMENT')
+            {
+              this.txt_topDept = await this.getTopDepart(res);
+              this.top10 = await this.countTop10Outlet(res);
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet)
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+              }]
+              //console.log("check this2",res)
+              //console.log("checkbarchartData", this.top10.map((label) => { return label['Net']}))
+            }
+            if(type=='SKU')
+            {
+              this.txt_topSku = await this.getTopSku(res);
+              this.top10 = await this.countTop10Outlet(res);
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet)
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+              }]
+              //console.log("check this2",res)
+              //console.log("checkbarchartData", this.top10.map((label) => { return label['Net']}))
+            }
+          }else{
+            this.top10 = [];
+            this.barChartData.labels =[];
+            this.barChartData.datasets = [{
+              data: [],
+              label: 'TOTAL '+type,
+              backgroundColor: '#9d0000'
+            }]
+          }
+        });
+        break;
+
+      case 'week':
+        let lastweekDate = moment(this.unformatcurrentDate).subtract(7, "days").format('YYMMDD');
+        let startLastWeekData = moment(this.unformatcurrentDate).subtract(14, "days").format('YYMMDD');
+
+        await this.getReport(startLastWeekData, lastweekDate, 'SALES', names).then(async (res2: any) => {
+          let tmpsales = await parseFloat(this.countTotalSales(res2));
+          let tmptrx = await this.countTotalTrx(res2);
+          let tmpavgTrx = await this.countAvgTrx(res2); 
+          this.top10 = await this.countTop10Outlet(res2);
+          let tmpOutlettop3 = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+            return item['Net'];
+          });
+          this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx,tmpOutlettop3);
+          console.log("yesterday top 3",tmpOutlettop3,startLastWeekData,lastweekDate)
+        })
+        await this.getReport(lastweekDate, this.currentDate, type, names).then(async (res: any) => {
+          if(res){
+            if(type=='SALES')
+            {
+              this.top10 = await this.countTop10Outlet(res);
+              this.txt_totalsales = await parseFloat(this.countTotalSales(res));
+              this.totalsales_dec = this.txt_totalsales.toLocaleString();
+              this.txt_totaltrx = await this.countTotalTrx(res);
+              this.txt_avgtrx = await this.countAvgTrx(res);
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+               }] 
+               //console.log("check this 1",res)
+            }
+            if(type=='HOURLY')
+            {
+              this.top10 = await this.countTop10Outlet(res);
+              var top10h = await this.countTop10Hour(res);
+              this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+              this.barChartData.labels = top10h.map((label) => { return type=='HOURLY' ? moment(label.Code, ["HH.mm"]).format("hh:mm a") : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: top10h.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+              }]
+            }
+            if(type=='DEPARTMENT')
+            {
+              this.top10 = await this.countTop10Outlet(res);
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+              }]
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+            }
+            if(type=='SKU')
+            {
+              this.top10 = await this.countTop10Outlet(res);
+              this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+              this.barChartData.datasets = [{
+                data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                label: 'TOTAL '+type,
+                backgroundColor: '#9d0000'
+              }]
+              this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                return item['Net'];
+              });
+              console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+            }
+          }else{
+            this.top10 = [];
+            this.barChartData.labels =[];
+            this.barChartData.datasets = [{
+              data: [],
+              label: 'TOTAL '+type,
+              backgroundColor: '#9d0000'
+            }]
+          }
+        });
+        break;
+
+        case 'month':
+          let monthstart = moment(this.unformatcurrentDate).startOf('month').format('YYMMDD');
+          let monthend = moment(this.unformatcurrentDate).endOf('month').format('YYMMDD');
+          let prevMonthFirstDay = moment(this.unformatcurrentDate).subtract(1, 'months').startOf('month').format('YYMMDD');
+          let prevMonthLastDay = moment(this.unformatcurrentDate).subtract(1, 'months').endOf('month').format('YYMMDD');
+
+          await this.getReport(prevMonthFirstDay, prevMonthLastDay, 'SALES', names).then(async (res2: any) => {
+            let tmpsales = await parseFloat(this.countTotalSales(res2));
+            let tmptrx = await this.countTotalTrx(res2);
+            let tmpavgTrx = await this.countAvgTrx(res2); 
+            this.top10 = await this.countTop10Outlet(res2);
+            let tmpOutlettop3 = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+              return item['Net'];
+            });
+            this.cuculatePercent(tmpsales, tmptrx,tmpavgTrx,tmpOutlettop3);
+            console.log("yesterday top 3",tmpOutlettop3,prevMonthFirstDay,prevMonthLastDay)
+          })
+          await this.getReport(monthstart, monthend, type, names).then(async (res: any) => {
+            if(res){
+              if(type=='SALES')
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                this.txt_totalsales = await parseFloat(this.countTotalSales(res));
+                this.totalsales_dec = this.txt_totalsales.toLocaleString();
+                this.txt_totaltrx = await this.countTotalTrx(res);
+                this.txt_avgtrx = await this.countAvgTrx(res);
+                this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                  return item['Net'];
+                });
+                console.log("today top 3",this.TdyTop3Outlet ,monthstart,monthend )
+                this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL '+type,
+                  backgroundColor: '#9d0000'
+                 }] 
+                 //console.log("check this 1",res)
+              }
+              if(type=='HOURLY')
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                var top10h = await this.countTop10Hour(res);
+                this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+                this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                  return item['Net'];
+                });
+                console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+                this.barChartData.labels = top10h.map((label) => { return type=='HOURLY' ? moment(label.Code, ["HH.mm"]).format("hh:mm a") : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: top10h.map((label) => { return label['Net'].toFixed(2)}),
+                  label: 'TOTAL '+type,
+                  backgroundColor: '#9d0000'
+                }]
+              }
+              if(type=='DEPARTMENT')
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                  label: 'TOTAL '+type,
+                  backgroundColor: '#9d0000'
+                }]
+                this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                  return item['Net'];
+                });
+                console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+              }
+              if(type=='SKU')
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                this.barChartData.labels = this.top10.map((label) => { return type=='HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2)}),
+                  label: 'TOTAL '+type,
+                  backgroundColor: '#9d0000'
+                }]
+                this.TdyTop3Outlet = this.top10.slice(0,3).filter(res => res.Net).map((item) => {
+                  return item['Net'];
+                });
+                console.log("today top 3",this.TdyTop3Outlet ,lastweekDate, this.currentDate )
+              }
             }else{
               this.top10 = [];
               this.barChartData.labels =[];
@@ -287,14 +522,14 @@ ionViewDidEnter() {
           });
           break;
     }
-    this.chart.update();
+    this.chart.update(); 
+    //this.getAllsales();
     this.loadingController.dismiss();
   }
 
   changeType(type){
     this.currentType = type;
     this.segmentChanged(this.currentRange);
-
   }
 
  async showProfile(){
@@ -326,7 +561,7 @@ ionViewDidEnter() {
       return res;
     }, {});
     let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
-    final.Net = final.Net.toFixed(2)
+    final.Net = final.Net.toLocaleString('en-US')
 
     return final;
   }
@@ -342,7 +577,7 @@ ionViewDidEnter() {
       return res;
     }, {});
     let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
-    final.Net = final.Net.toFixed(2)
+    final.Net = final.Net.toLocaleString('en-US')
     return final;
   }
 
@@ -358,33 +593,35 @@ ionViewDidEnter() {
       return res;
     }, {});
     let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
-    final.Net = final.Net.toFixed(2)
-    console.log("hour final",moment(final.Code, ["HH.mm"]).format("hh:mm a"))
+    final.Net = final.Net.toLocaleString('en-US')
+    //console.log("hour final",moment(final.Code, ["HH.mm"]).format("hh:mm a"))
     return final;
   }
 
-  cuculatePercent(tmpsales, tmptrx,tmpavgTrx) {
+  cuculatePercent(tmpsales, tmptrx,tmpavgTrx,tmpOutlettop3) {
     this.salespercent = parseInt(((1 - (tmpsales / this.txt_totalsales)) * 100).toString());
     this.trxpercent = parseInt(((1 - (tmptrx / this.txt_totaltrx)) * 100).toString());
     this.trxAvgpercent = parseInt(((1 - (tmpavgTrx / this.txt_avgtrx)) * 100).toString());
+    for(var i=0;i<tmpOutlettop3.length;i++)
+    {
+      this.Top3OutletPercent[i] = parseInt(((1 - (tmpOutlettop3[i] / this.TdyTop3Outlet[i])) * 100).toString());
+      //console.log("outlet percent top 3",this.Top3OutletPercent)   
+    }
+     console.log(this.Top3OutletPercent[0])
   }
 
   countTotalTrx(res) {
     var countTrx = 0;
     for (let i of res) {
-      countTrx = countTrx + parseInt(i.Trx);
+        countTrx = countTrx + parseInt(i.Trx);
     }
-    console.log("totaltrx",res)
+    //console.log("totaltrxx",countTrx)
     return countTrx;
   }
 
   countAvgTrx(res) {
-    var AvgTrx = 0;
-    AvgTrx = this.txt_totalsales/this.txt_totaltrx;
-    console.log("totaltrx",AvgTrx.toFixed())
-    console.log("totaltrx",this.txt_totaltrx)
-    console.log("totalsales",this.txt_totalsales)
-    var countAvgTrx = Number(AvgTrx.toFixed(2));
+    this.AvgTrx = this.txt_totalsales/this.txt_totaltrx;
+    var countAvgTrx = Number(this.AvgTrx.toFixed(2));
     return countAvgTrx
   }
 
@@ -417,7 +654,7 @@ ionViewDidEnter() {
       return res;
     }, {});
     let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
-    final.Net = final.Net.toFixed(2)
+    final.Net = final.Net.toLocaleString('en-US')
     return final;
   }
 
@@ -425,17 +662,34 @@ ionViewDidEnter() {
     var result = [];
     res.reduce((res, value) => {
       if (!res[value.Code]) {
-        res[value.Code] = { Desc: value.Desc, Code: moment(value.Code, ["HH.mm"]).format("hh:mm a"), Net: 0 };
+        res[value.Code] = { Desc: value.Desc, Code:moment(value.Code, ["HH.mm"]).format("hh:mm a"), Net: 0 };
+        //res[value.Code] = { Desc: value.Desc, Code:value.Code, Net: 0 };
         result.push(res[value.Code])
-        //console.log("check value.code",res[value.Code].Code)
+        //console.log("checles",res[value.Code])
       }
       res[value.Code].Net += parseFloat(value.Net);
+        // console.log("check rs",res)
       return res;
     }, {});
-    //console.log("check result",result)
-    //console.log("check result2", result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10))
-    return result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, 10);
-  
+    //console.log("check rs",result)
+    return result.sort((a, b) => parseFloat(b.Net) - parseFloat(a.Net)).slice(0, this.qtn);
+  }
+
+  countTop10Hour(res) {
+    var result = [];
+    res.reduce((res, value) => {
+      if (!res[value.Code]) {
+        //res[value.Code] = { Desc: value.Desc, Code:moment(value.Code, ["HH.mm"]).format("hh:mm a"), Net: 0 };
+        res[value.Code] = { Desc: value.Desc, Code:value.Code, Net: 0 };
+        result.push(res[value.Code])
+        //console.log("checles",res[value.Code])
+      }
+      res[value.Code].Net += parseFloat(value.Net);
+        // console.log("check rs",res)
+      return res;
+    }, {});
+    //console.log("check rs",result)
+    return result.sort((a, b) => parseFloat(a.Code) - parseFloat(b.Code));
   }
 
   onClickSlide(id,month) {
@@ -457,8 +711,8 @@ ionViewDidEnter() {
     const { data } = await modal.onWillDismiss();
     if (data) {
       this.storeList = data.storeList;
-      this.getAllsales();
-      this.segmentChanged('day')
+      //this.getAllsales();
+      this.segmentChanged(this.currentRange)
       //console.log("selectchaste",this.storeList)
     }
   }
@@ -471,11 +725,11 @@ ionViewDidEnter() {
     await loading.present();
 
     const { role, data } = await loading.onDidDismiss();
-    console.log('Loading dismissed!');
+    //console.log('Loading dismissed!');
   }
 
   public chartClicked({ event, active }: { event?: ChartEvent, active?: {}[] }): void {
-    console.log(event, active);
+    //console.log(event, active);
   }
 
   public chartHovered({ event, active }: { event?: ChartEvent, active?: {}[] }): void {
@@ -499,8 +753,8 @@ ionViewDidEnter() {
   datepicker(date){
     this.unformatcurrentDate = moment(date).format('YYYY-MM-DD');
       this.currentDate = moment(date).format('YYMMDD');
-      this.getAllsales();
-      this.segmentChanged('day');
+      //this.getAllsales();
+      this.segmentChanged(this.currentRange);
   }
 
   async getReport(StartDate, EndDate, ReportType, outletArray) {
@@ -519,4 +773,58 @@ ionViewDidEnter() {
     };
     return this.http.post('https://qubelive.com.my/QubeSR/User/salereportAll.php', postData.toString(), httpOptions).toPromise();
   }
+
+  async openPicker() {
+    let pickerAction;
+    for(var i = 1; i <= 50; i++){
+        this.numberArray.push(i);
+    }
+    
+    let options: PickerOptions = {
+      buttons: [
+        {
+          text: "Cancel",
+          role: 'cancel',
+          handler: value => {
+            pickerAction = 'cancel';
+          }
+        },
+        {
+          text:'Ok',
+          handler: value => {
+            pickerAction = 'Ok';
+          }
+        }
+      ],
+      columns:[{
+        name:'numberArray',
+        options:this.getColumnOptions()
+      }]
+    };
+
+    let picker = await this.pickerController.create(options);
+    picker.present();
+    picker.onDidDismiss().then(async data=>{
+      if (pickerAction === 'Ok') {
+      let col = await picker.getColumn('numberArray');
+      this.qtn = col.selectedIndex+1
+
+      this.segmentChanged(this.currentRange);
+      console.log('col',this.qtn)
+      }
+      else
+      {
+       
+      }
+    });
+  }
+
+  getColumnOptions(){
+    let options = [];
+    this.numberArray.forEach(x => {
+      options.push({text:x,value:x});
+    });
+    return options;
+  }
+  
 }

@@ -7,6 +7,9 @@
 </ion-header>
 
 <ion-content>
+  <div class="control">
+    <ion-searchbar placeholder="Search..." [(ngModel)]="filterTerm" animated="true"></ion-searchbar>
+  </div>
   <ion-note>Max 20 Outlet</ion-note>
   <ion-row> 
       <p *ngFor="let store of storeList;let i = index" [hidden]="store.status == false && store.flavorite == false">
@@ -19,14 +22,14 @@
   </ion-row>
   <ion-list>
     <ion-list-header>All Store</ion-list-header>
-    <div *ngFor="let store of storeList ;let i = index">
+    <div *ngFor="let store of storeList | filter:filterTerm;let i = index">
     <ion-card class="ion-no-margin" style="margin:5px" *ngIf="store.status == false && store.flavorite == false">
       <ion-item>
         <ion-label>
             {{store.name}}
         </ion-label>
-        <ion-icon name="star-outline" (click)="addFlavorite(i)"  style="margin-right:17px;"></ion-icon>
-        <ion-icon name="add-outline"  (click)="add(i)" ></ion-icon>
+        <ion-icon name="star-outline" (click)="addFlavorite(i,store)"  style="margin-right:17px;"></ion-icon>
+        <ion-icon name="add-outline"  (click)="add(i,store)"></ion-icon>
       </ion-item>
     </ion-card>
   </div>

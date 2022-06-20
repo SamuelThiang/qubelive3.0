@@ -1,8 +1,8 @@
-<ion-content [fullscreen]="true"
+<ion-content [fullscreen]="true" #mycontent [scrollEvents]="true"
   style="--background: linear-gradient( 65.9deg,  rgb(231, 255, 254) 5.5%, rgb(237, 237, 255) 54.2%, rgb(236, 250, 255) 55.2%, rgb(251, 240, 255) 98.4% );">
-  <ion-popover trigger="open-modal" show-backdrop="false">
-    <ng-template >
-      <ion-datetime 
+  <ion-popover trigger="open-modal" show-backdrop="false" class="popover-datetime">
+    <ng-template>
+      <ion-datetime
          #popoverDate
          [max]="maxDate"
          presentation="date"
@@ -11,8 +11,8 @@
        ></ion-datetime>
     </ng-template>
   </ion-popover>    
-  <ion-header class="ion-no-border">
-    <ion-toolbar style="--background:transparent;padding:15px">
+  <ion-header scrollOpacity [ionContentRef]="mycontent" class="ion-no-border" style="position:sticky;top:0;left:0;right:0;z-index: 9999;">
+    <ion-toolbar style="padding:3px;--background: linear-gradient( 65.9deg,  rgb(231, 255, 254) 5.5%, rgb(237, 237, 255) 54.2%, rgb(236, 250, 255) 55.2%, rgb(251, 240, 255) 98.4% );"  >
       <div slot="end">
         <ion-item style="width:100%;--background:transparent" lines="none"  id="open-modal">
           <ion-label >
@@ -28,10 +28,11 @@
       </ion-buttons>
     </ion-toolbar>
   </ion-header>  
+
   <ion-card style="max-height: 80px;margin: 10px;">
     <ion-label>
-      <p>TOTOL SALES</p>
-      <h1 style="color:#555;font-weight:bold">MYR {{txt_totalsales}}</h1>
+      <p>TOTAL SALES</p>
+      <div><h1 style="color:#555;font-weight:bold"><h1 style="display:inline;font-size:20px;font-weight:bold">MYR</h1> {{totalsales_dec}}</h1></div>
     </ion-label>
     <ion-badge style="position:absolute;right:10px;bottom:10px;"
       [style.background]="salespercent > 0 ? 'green' : 'red'">
@@ -45,9 +46,9 @@
       <ion-card style="max-height: 80px;margin:2px;">
         <ion-label>
           <p style="font-size:12px;">TOTAL TRANSACTION</p>
-          <h1 style="color:#555;font-weight:bold">{{txt_totaltrx}}</h1>
+          <h1 style="color:#555;font-weight:bold">{{txt_totaltrx.toLocaleString('en-US')}}</h1>
         </ion-label>
-        <ion-badge style="position:absolute;right:17px;bottom:25px;" [style.background]="trxpercent > 0 ? 'green' : 'red'">
+        <ion-badge style="position:absolute;right:10px;bottom:10px;" [style.background]="trxpercent > 0 ? 'green' : 'red'">
           <ion-label>{{trxpercent}}%</ion-label>
           <ion-icon [name]="trxpercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
         </ion-badge>
@@ -56,8 +57,8 @@
     <ion-col size="6" class="ion-no-margin ion-no-padding">
       <ion-card style="max-height: 80px;margin:2px;">
         <ion-label>
-          <p style="font-size:12px;">AVERAGE TRANSACTION</p>
-          <h1 style="color:#555;font-weight:bold">MYR {{txt_avgtrx}}</h1>
+          <p style="font-size:12px;">AVG.TRANSACTION</p>
+          <h1 style="color:#555;font-weight:bold"><h1 style="display:inline;font-size:20px;font-weight:bold">MYR</h1> {{txt_avgtrx}}</h1>
         </ion-label>
         <!-- <ion-badge style="position:absolute;right:17px;bottom:25px;" [style.background]="trxAvgpercent > 0 ? 'green' : 'red'">
           <ion-label>{{trxAvgpercent}}%</ion-label>
@@ -66,7 +67,27 @@
       </ion-card>
     </ion-col>
   </ion-row>
- 
+    
+    <!-- <ion-card style="margin:10px;">
+      <ion-list-header class="ion-no-margin ion-no-padding" (click)="openPicker()" style="margin-bottom:5px">Top 10 {{currentType}}</ion-list-header>
+      <ion-segment [(ngModel)]="DateRange" (ionChange)="segmentChanged(DateRange)">
+        <ion-segment-button value="day">
+          <ion-label>Day</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="week">
+          <ion-label>Week</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="month">
+          <ion-label>Month</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+
+        <div style="display: block" class="ion-margin">
+          <canvas baseChart [data]="barChartData" [options]="barChartOptions" [plugins]="barChartPlugins"
+            [type]="barChartType" (chartHover)="chartHovered($event)" (chartClick)="chartClicked($event)">
+          </canvas>
+        </div>
+    </ion-card> -->
 
   <ion-grid>
     <ion-row>
@@ -74,7 +95,7 @@
         <ion-card class="box4" (click)="changeType('OUTLET')" [ngStyle]="currentType == 'OUTLET' ? {border: '2px solid black'} : {} " style="background-image: linear-gradient( 135deg, #ff656a 10%, #bf2025 100%);">
           <ion-label>
             <p>Daily Top Outlet</p>
-            <h1>MYR <br>{{txt_topOutlet.Net}}</h1>
+            <h1 style="font-size:15px;">MYR</h1><h1>{{txt_topOutlet.Net}}</h1>
             <div>
               <ion-note>
                 <span>
@@ -90,7 +111,7 @@
         <ion-card class="box4" (click)="changeType('SKU')" [ngStyle]="currentType == 'SKU' ? {border: '2px solid black'} : {} " style="background-image: linear-gradient( 135deg, #ffb648 10%, #DE4313 100%);">
           <ion-label>
             <p>Daily Top Sku</p>
-            <h1>MYR <br>{{txt_topSku.Net}}</h1>
+            <h1 style="font-size:15px;">MYR</h1><h1>{{txt_topSku.Net}}</h1>
             <div>
               <ion-note>
                 <span>
@@ -106,13 +127,12 @@
         <ion-card class="box4" (click)="changeType('DEPT')" [ngStyle]="currentType == 'DEPT' ? {border: '2px solid black'} : {} " style="background-image: linear-gradient( 135deg, #75c6ff 10%, #0396FF 100%);">
           <ion-label>
             <p>Daily Top Dept</p>
-            <h1>MYR <br>{{txt_topDept.Net}}</h1>
+            <h1 style="font-size:15px;">MYR</h1><h1>{{txt_topDept.Net}}</h1>
             <div>
               <ion-note>
                 <span>
                   {{txt_topDept.Desc}}
                 </span>
-             
               </ion-note>
             </div>
           </ion-label>
@@ -122,31 +142,24 @@
         <ion-card class="box4" (click)="changeType('HOUR')" [ngStyle]="currentType == 'HOUR' ? {border: '2px solid black'} : {} " style="background-image: linear-gradient( 135deg, #d181ff 10%, #9F44D3 100%);">
           <ion-label>
             <p>Daily Top Hour</p>
-            <h1>MYR <br>{{txt_topHour.Net}}</h1>
+            <h1 style="font-size:15px;">MYR</h1><h1>{{txt_topHour.Net}}</h1>
             <div>
               <ion-note>
                 <span>
                   {{txt_topHour.Code}}
                 </span>
-          
               </ion-note>
             </div>
           </ion-label>
         </ion-card>
       </ion-col>
     </ion-row>
-
-
   </ion-grid>
-
-
-
-
 
   <div style="display: block">
     
     <ion-card>
-      <ion-list-header class="ion-no-margin ion-no-padding" style="margin-bottom:5px">Top 10 {{currentType}}</ion-list-header>
+      <ion-list-header class="ion-no-margin ion-no-padding" (click)="openPicker()" style="margin-bottom:5px">Top <u style="margin-left: 10px;margin-right: 10px">{{qtn}}</u> {{currentType}}</ion-list-header>
       <ion-segment [(ngModel)]="DateRange" (ionChange)="segmentChanged(DateRange)">
         <ion-segment-button value="day">
           <ion-label>Day</ion-label>
@@ -175,17 +188,26 @@
   
         <ion-item *ngFor="let outlet of top10;let i = index">
           <ion-label>
-            <h1>MYR {{outlet.Net.toFixed(2)}}</h1>
+            <h1>MYR {{outlet.Net.toLocaleString('en-US')}}</h1>
             <p>{{currentType == 'HOUR' ? outlet.Code : outlet.Desc}}</p>
           </ion-label>
-          <div style="width:50px" *ngIf="i == 0">
-            <img src="assets/img/1.png">
+          <div *ngIf="i == 0">
+            <ion-badge style="position:absolute;right:10px;bottom:10px;width: 30%;" [style.background]="Top3OutletPercent[0] > 0 ? 'green' : 'red'">
+              <ion-label style="display: inline;">{{Top3OutletPercent[0]}}%</ion-label>
+              <ion-icon [name]="Top3OutletPercent[0] > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+            </ion-badge>
           </div>
           <div style="width:50px" *ngIf="i == 1">
-            <img src="assets/img/2.png">
+            <ion-badge style="position:absolute;right:10px;bottom:10px;width: 30%;" [style.background]="Top3OutletPercent[1] > 0 ? 'green' : 'red'">
+              <ion-label style="display: inline;">{{Top3OutletPercent[1]}}%</ion-label>
+              <ion-icon [name]="Top3OutletPercent[1] > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+            </ion-badge>
           </div>
           <div style="width:50px" *ngIf="i == 2">
-            <img src="assets/img/3.png">
+            <ion-badge style="position:absolute;right:10px;bottom:10px;width: 30%;" [style.background]="Top3OutletPercent[2] > 0 ? 'green' : 'red'">
+              <ion-label style="display: inline;">{{Top3OutletPercent[2]}}%</ion-label>
+              <ion-icon [name]="Top3OutletPercent[2] > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+            </ion-badge>
           </div>
         </ion-item>
     </ion-card>
