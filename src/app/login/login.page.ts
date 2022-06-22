@@ -21,20 +21,13 @@ export class LoginPage implements OnInit {
     private toastController:ToastController,
     private nativeStorage: NativeStorage) 
   {
-    this.nativeStorage.getItem('rmbacc')
-    .then(
-      data => {
-        if (data != '') {
-          this.inputEmail = data.id;
-          this.inputPass = data.pass;
-          this.remembercheck = data.ischeck;
-          this.nav.navigateRoot('tabs');
-          this.presentToast('LOGIN SUCCESSFUL');
-        }
-      },
-      error => console.error("empty user & pass :", error)
-    );
-
+    if(localStorage.getItem('rmbacc')){
+      let tmpuser = JSON.parse(localStorage.getItem('rmbacc'))
+      this.inputEmail = tmpuser.id;
+      this.inputPass = tmpuser.pass;
+      this.remembercheck = tmpuser.ischeck;
+      this.presentAlert();
+    }
   }
 
   ngOnInit() {
@@ -58,19 +51,9 @@ export class LoginPage implements OnInit {
     this.http.post('https://qubelive.com.my/QubeSR/User/login.php', postData.toString(), httpOptions).subscribe((response: any) => {
 
       if (this.remembercheck) {
-        this.nativeStorage.setItem('rmbacc', { 'id': this.inputEmail, 'pass': this.inputPass, 'ischeck': 'true' })
-          .then(
-            () => console.log('Remember Account!'),
-            error => console.error('Remember Account Failed', error)
-          );
-          //console.log("check login",this.nativeStorage.getItem('rmbacc'))
+        localStorage.setItem('rmbacc', JSON.stringify({ 'id': this.inputEmail, 'pass': this.inputPass, 'ischeck': 'true' }));
       } else {
-        this.nativeStorage.remove('rmbacc')
-          .then(
-            () => console.log('Removed Account!'),
-            error => console.error('Removed Account Failed', error)
-          );
-          console.log("nocheck login")
+        this.nativeStorage.remove('rmbacc');
       }
 
       if(response.status == '1'){
@@ -81,7 +64,7 @@ export class LoginPage implements OnInit {
         localStorage.setItem('qubelive_user',JSON.stringify(response))
         this.dlReportList(response.path);
         this.nav.navigateRoot('tabs');
-        console.log(JSON.stringify(response))
+
         this.presentToast('LOGIN SUCCESSFUL');
       }else{
         this.presentToast('USER NOT FOUND');

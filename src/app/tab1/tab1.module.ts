@@ -9,7 +9,7 @@ import {MatDatepickerModule} from '@angular/material/datepicker';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatNativeDateModule} from '@angular/material/core';
 import { NgChartsModule } from 'ng2-charts';
-import { IonHeaderScrollOpacityModule } from 'ion-header-scroll-opacity';
+// import { IonHeaderScrollOpacityModule } from 'ion-header-scroll-opacity';
 @NgModule({
   imports: [
     IonicModule,
@@ -21,7 +21,7 @@ import { IonHeaderScrollOpacityModule } from 'ion-header-scroll-opacity';
     MatNativeDateModule,
     MatDatepickerModule,
     NgChartsModule,
-    IonHeaderScrollOpacityModule
+    // IonHeaderScrollOpacityModule
   ],
   declarations: [Tab1Page]
 })

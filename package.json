@@ -32,7 +32,6 @@
     "apexcharts": "^3.35.2",
     "chart.js": "^3.8.0",
     "chartjs-plugin-datalabels": "^2.0.0",
-    "ion-header-scroll-opacity": "^2.0.1",
     "moment": "^2.29.3",
     "ng-apexcharts": "^1.7.1",
     "ng2-charts": "^3.0.11",
