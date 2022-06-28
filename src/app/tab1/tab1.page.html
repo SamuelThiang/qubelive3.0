@@ -3,7 +3,7 @@
 
   <ion-popover trigger="open-modal" show-backdrop="false" class="popover-datetime">
     <ng-template>
-      <ion-datetime #popoverDate [max]="unformatcurrentDate" presentation="date" showDefaultButtons=true
+      <ion-datetime #popoverDate [max]="unformatcurrentDate" presentation="date" showDefaultButtons=true 
         (ionChange)="datepicker(popoverDate.value)"></ion-datetime>
     </ng-template>
   </ion-popover>
@@ -39,7 +39,6 @@
           </ion-label>
           <ion-badge style="position:absolute;right:10px;bottom:10px;"
             [style.background]="salespercent > 0 ? 'green' : 'red'">
-
             <ion-label>{{salespercent}}%</ion-label>
             <ion-icon [name]="salespercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
           </ion-badge>
@@ -83,10 +82,10 @@
           </h1>
         </ion-label>
         <ion-badge style="position:absolute;right:10px;bottom:10px;"
-          [style.background]="salespercent > 0 ? 'green' : 'red'">
+          [style.background]="salespercentWeek > 0 ? 'green' : 'red'">
 
-          <ion-label>{{salespercent}}%</ion-label>
-          <ion-icon [name]="salespercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+          <ion-label>{{salespercentWeek}}%</ion-label>
+          <ion-icon [name]="salespercentWeek > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
         </ion-badge>
       </ion-card>
 
@@ -98,9 +97,9 @@
               <h1 style="color:#555;font-weight:bold">{{txt_totaltrx}}</h1>
             </ion-label>
             <ion-badge style="position:absolute;right:10px;bottom:10px;"
-              [style.background]="trxpercent > 0 ? 'green' : 'red'">
-              <ion-label>{{trxpercent}}%</ion-label>
-              <ion-icon [name]="trxpercent > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+              [style.background]="trxpercentWeek > 0 ? 'green' : 'red'">
+              <ion-label>{{trxpercentWeek}}%</ion-label>
+              <ion-icon [name]="trxpercentWeek > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
             </ion-badge>
           </ion-card>
         </ion-col>
@@ -128,7 +127,7 @@
       <ion-segment-button value="month">
         <ion-label>Month</ion-label>
       </ion-segment-button>
-      <ion-segment-button value="year">
+      <ion-segment-button value="year" *ngIf="showYearly">
         <ion-label>Year</ion-label>
       </ion-segment-button>
     </ion-segment>
@@ -246,9 +245,17 @@
       <ion-item *ngFor="let outlet of top10.slice(0, qtn);let i = index">
         <ion-label>
           <ion-note style="font-size:15px">{{currentType == 'HOUR' ? outlet.Code : outlet.Desc}}</ion-note>
-          <h1 style="color:#555;font-size:15px;margin-bottom: 0px;text-align: end;"><label
-              style="color:#555;font-weight:bold;font-size: 25px;">{{outlet.Net.toLocaleString('en-US',
-              {minimumFractionDigits: 2})}}</label> MYR</h1>
+            <ion-label>
+              <ion-badge style="display: inline-flex;margin-top:10px;"
+                [style.background]="salesPercentTop3[i] > 0 ? 'green' : 'red'">
+                <ion-label>{{salesPercentTop3[i]}}%</ion-label>
+                <ion-icon [name]="salesPercentTop3[i] > 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+              </ion-badge>
+              <h1 style="color:#555;font-weight:bold;position: absolute;right: 10px;bottom: -10px;">
+                {{outlet.Net.toLocaleString('en-US',{minimumFractionDigits: 2})}}
+              <h1 style="display:inline;font-size:15px;"> MYR</h1>
+              </h1>
+          </ion-label>
         </ion-label>
       </ion-item>
     </ion-card>

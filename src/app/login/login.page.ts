@@ -120,6 +120,7 @@ export class LoginPage implements OnInit {
 
     this.http.post('https://qubelive.com.my/QubeSR/User/ListAll.php', postData.toString(), httpOptions).subscribe((response: any) => {
       localStorage.setItem('qubelive_store',JSON.stringify(response));
+      console.log(JSON.stringify(response))
     }, error => {
       console.error(error);
     });
