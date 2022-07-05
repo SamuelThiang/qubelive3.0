@@ -10,16 +10,27 @@
   <div class="control">
     <ion-searchbar placeholder="Search..." [(ngModel)]="filterTerm" animated="true"></ion-searchbar>
   </div>
-  <ion-note>Max 20 Outlet</ion-note>
-  <ion-row> 
-      <p *ngFor="let store of storeList;let i = index" [hidden]="store.status == false && store.flavorite == false">
-        <ion-chip (click)="remove(i)" [style.background]="store.status == false ? 'gold' : 'red'">
-          <!-- <ion-chip (click)="remove(i)" style="background-color:rgb(146, 25, 25)"> -->
+  <div style="text-align: right;width: 95%;"><ion-note>Max 20 Outlet</ion-note></div>
+  <div style="padding-left:15px;">  
+    <ion-row><p>Favourite Outlet</p></ion-row>
+    <ion-row> 
+        <p *ngFor="let store of storeList;let i = index" [hidden]="store.flavorite == false">
+          <ion-chip (click)="remove(i)" [style.background]="store.status == false ? 'gold' : '#BE2025'">
+            <ion-label style="color:white">{{store.name}}</ion-label>
+            <ion-icon style="color:white" name="close-circle"></ion-icon>
+          </ion-chip>
+        </p>
+    </ion-row>
+    <ion-row><p>Selected Outlet</p></ion-row>
+    <ion-row> 
+      <p *ngFor="let store of storeList;let i = index" [hidden]="store.status == false">
+        <ion-chip (click)="remove(i)" [style.background]="store.status == false ? 'gold' : '#BE2025'">
           <ion-label style="color:white">{{store.name}}</ion-label>
           <ion-icon style="color:white" name="close-circle"></ion-icon>
         </ion-chip>
       </p>
   </ion-row>
+</div>
   <ion-list>
     <ion-list-header>All Store</ion-list-header>
     <div *ngFor="let store of storeList | filter:filterTerm;let i = index">

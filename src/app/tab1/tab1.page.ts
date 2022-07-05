@@ -10,6 +10,7 @@ import { FilteroutletPage } from '../filteroutlet/filteroutlet.page'
 import { Tab2Page } from '../tab2/tab2.page'
 import { PickerController } from '@ionic/angular';
 import { Key } from 'protractor';
+import { Console } from 'console';
 
 @Component({
   selector: 'app-tab1',
@@ -87,12 +88,18 @@ export class Tab1Page {
     initialSlide: 0,
     slidesPerView: 1.1,
   };
+  slideOptsTwos = {
+    spaceBetween:0,
+    slidesPerView: 1.75,  
+  };
   montharr = this.getprevMonths();
   @ViewChild('slides', { read: IonSlides }) slides: IonSlides;
+  currencyValue ="";
   DateRange = 'day';
   DateRange2 = 'week';
   activeIndex: number = 0;
   showYearly: boolean = false;
+  DateTimeSwitch = "";
   txt_totalsales = 0;
   txt_totaltrx = 0;
   txt_avgtrx = 0;
@@ -106,6 +113,7 @@ export class Tab1Page {
   reportType = [];
   storeList = [];
   topOutlet = {};
+  inputUser = "";
   salespercent = 0;
   salespercentWeek = 0;
   trxpercent = 0;
@@ -124,7 +132,8 @@ export class Tab1Page {
   currentRange = 'day';
   currentRange2 = 'week';
   currentDate = moment().format('YYMMDD');
-  unformatcurrentDate = moment().format('YYYY-MM-DD')
+  unformatcurrentDate = moment().format('YYYY-MM-DD');
+  unformatcurrentDateNext = moment().format('YYYY-MM-DD');
 
   favOutletArr = [];
   getprevMonths() {
@@ -149,8 +158,9 @@ export class Tab1Page {
       let tmpstore = await JSON.parse(localStorage.getItem('qubelive_store'));
       let data = await JSON.parse(localStorage.getItem('qubelive_user'));
       this.favOutletArr = data.favOutlet
-
-      //console.log(this.reportType)
+      this.inputUser = data.email;
+      this.currencyValue = data.currency;
+      console.log("let data",data)
 
       let checkReportType = [];
       let hideyearly = [];
@@ -164,9 +174,6 @@ export class Tab1Page {
         }
         this.showYearly = false;
       });
-
-     // console.log(hideyearly)
-
 
       if (data.favOutlet != "") {
         //console.log(tmpstore)
@@ -230,7 +237,7 @@ export class Tab1Page {
         label: 'TOTAL SALES',
         backgroundColor: [background_1]
       }]
-
+      console.log(this.currentDate, this.currentDate, 'SALES', names)
     });
 
     //COMPARE LAST DAY GET PERCENT
@@ -320,8 +327,10 @@ export class Tab1Page {
     switch (tabs) {
       case 'day':
         let yesterday = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
-        let yesterdaydefault = moment(this.unformatcurrentDate).subtract(1, "days").format('YYYY-MM-DD');
+        let yesterdaydefault = moment(this.unformatcurrentDate).subtract(1, "days").format('YYMMDD');
         let tmptotalsales;
+        this.DateTimeSwitch = this.unformatcurrentDate;
+
 
         //NORMAL OPERATION
         await this.getReport(this.currentDate, this.currentDate, type, names).then(async (res: any) => {
@@ -405,7 +414,7 @@ export class Tab1Page {
 
             // this.cuculatePercent(tmpsales, tmptrx, this.fx_txt_totalsales, this.fx_txt_totaltrx);
             this.calculateListPercent(tmpsalestop3,this.top10);
-            console.log(type)
+            //console.log("check both",tmpsalestop3,this.top10)
           }
         })
         break;
@@ -414,12 +423,16 @@ export class Tab1Page {
         let startLastWeekStart = moment(this.unformatcurrentDate).subtract(13, "days").format('YYMMDD');
         let startLastWeekEnd = moment(this.unformatcurrentDate).subtract(7, "days").format('YYMMDD');
         let lastweekDate = moment(this.unformatcurrentDate).subtract(6, "days").format('YYMMDD');
+        let lastweekDate2OnlyDisplay = moment(this.unformatcurrentDate).subtract(6, "days").format('YYYY-MM-DD');
+
+        this.DateTimeSwitch = lastweekDate2OnlyDisplay + ' - ' + this.unformatcurrentDate
+
         //NORMAL OPERATION
         await this.getReport(lastweekDate, this.currentDate, type, names).then(async (res: any) => {
           if (res) {
             if (type == 'SALES') {
               this.top10 = await this.countTop10Outlet(res);
-
+              console.log("weekluy",this.top10)
               this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
               this.barChartData.datasets = [{
                 data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
@@ -430,7 +443,7 @@ export class Tab1Page {
             //COMPARE LAST WEEK GET PERCENT
             await this.getReport(startLastWeekStart, startLastWeekEnd, 'SALES', names).then(async (res2: any) => {
               let tmpsalestop3 = await this.countTop10Outlet(res2);
-
+              console.log("check both",tmpsalestop3,this.top10)
               this.calculateListPercent(tmpsalestop3,this.top10);
               //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
             })
@@ -439,8 +452,11 @@ export class Tab1Page {
             if (type == 'HOURLY') {
               this.top10 = await this.countTop10Outlet(res);
               var top10h = await this.countTop10Hour(res);
-
+              console.log("first code",this.txt_topHour.Code)
+              console.log("datetime",lastweekDate,this.currentDate)
               this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+              console.log("second code",this.txt_topHour.Code)
+              console.log(top10h)
               this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("h a") : label['Desc'] });
               this.barChartData.datasets = [{
                 data: top10h.map((label) => { return label['Net'].toFixed(2) }),
@@ -486,109 +502,113 @@ export class Tab1Page {
         //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
       })
       break;
-
+      
       case 'month':
-        let monthstart = moment(this.unformatcurrentDate).startOf('month').format('YYMMDD');
-        let monthend = moment(this.unformatcurrentDate).endOf('month').format('YYMMDD');
-        let prevMonthFirstDay = moment(this.unformatcurrentDate).subtract(1, 'months').startOf('month').format('YYMMDD');
-        let prevMonthLastDay = moment(this.unformatcurrentDate).subtract(1, 'months').endOf('month').format('YYMMDD');
-        //NORMAL OPERATION
-        await this.getReport(monthstart, monthend, type, names).then(async (res: any) => {
-          if (res) {
-            if (type == 'SALES') 
-            {
-              this.top10 = await this.countTop10Outlet(res);
+      let monthstart = moment(this.unformatcurrentDate).startOf('month').format('YYMMDD');
+      let monthend = moment(this.unformatcurrentDate).endOf('month').format('YYMMDD');
+      let monthstartOnlyDisplay = moment(this.unformatcurrentDate).startOf('month').format('YYYY-MM-DD');
+      let monthendOnlyDisplay = moment(this.unformatcurrentDate).endOf('month').format('YYYY-MM-DD');
+      let prevMonthFirstDay = moment(this.unformatcurrentDate).subtract(1, 'months').startOf('month').format('YYMMDD');
+      let prevMonthLastDay = moment(this.unformatcurrentDate).subtract(1, 'months').endOf('month').format('YYMMDD');
 
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
-
-              //COMPARE LAST MONTH GET PERCENT
-              await this.getReport(prevMonthFirstDay, prevMonthLastDay, 'SALES', names).then(async (res2: any) => {
-                let tmpsalestop3 = await this.countTop10Outlet(res2);
-                this.calculateListPercent(tmpsalestop3,this.top10);
-                //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
-              })
-            }
-            if (type == 'HOURLY') {
-              this.top10 = await this.countTop10Outlet(res);
-              var top10h = await this.countTop10Hour(res);
-              this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
-
-              this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("hh:mm a") : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: top10h.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
-            }
-            if (type == 'DEPARTMENT') {
-              this.top10 = await this.countTop10Outlet(res);
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
-
-            }
-            if (type == 'SKU') {
-              this.top10 = await this.countTop10Outlet(res);
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
-
-            }
-          } else {
-            this.top10 = [];
-            this.barChartData.labels = [];
+      this.DateTimeSwitch = monthstartOnlyDisplay + ' - ' + monthendOnlyDisplay
+      //NORMAL OPERATION
+      await this.getReport(monthstart, monthend, type, names).then(async (res: any) => {
+        if (res) {
+          if (type == 'SALES') 
+          {
+            console.log(monthstart,monthend)
+            this.top10 = await this.countTop10Outlet(res);
+            this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
             this.barChartData.datasets = [{
-              data: [],
+              data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+              label: 'TOTAL ' + type,
+              backgroundColor: [background_1]
+            }]
+
+            //COMPARE LAST MONTH GET PERCENT
+            await this.getReport(prevMonthFirstDay, prevMonthLastDay, 'SALES', names).then(async (res2: any) => {
+              let tmpsalestop3 = await this.countTop10Outlet(res2);
+              this.calculateListPercent(tmpsalestop3,this.top10);
+              console.log("check both",tmpsalestop3,this.top10)
+            })
+          }
+          if (type == 'HOURLY') {
+            this.top10 = await this.countTop10Outlet(res);
+            var top10h = await this.countTop10Hour(res);
+            this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+
+            this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("hh:mm a") : label['Desc'] });
+            this.barChartData.datasets = [{
+              data: top10h.map((label) => { return label['Net'].toFixed(2) }),
               label: 'TOTAL ' + type,
               backgroundColor: [background_1]
             }]
           }
-        });
+          if (type == 'DEPARTMENT') {
+            this.top10 = await this.countTop10Outlet(res);
+            this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+            this.barChartData.datasets = [{
+              data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+              label: 'TOTAL ' + type,
+              backgroundColor: [background_1]
+            }]
 
-        //COMPARE LAST MONTH GET PERCENT
-        await this.getReport(prevMonthFirstDay, prevMonthLastDay,type, names).then(async (res2: any) => {
-          let tmpsalestop3 = await this.countTop10Outlet(res2);
-          this.calculateListPercent(tmpsalestop3,this.top10);
-          //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
-        })
-        break;
-    }
-    this.barChartOptions = {
-      responsive: true,
-      // We use these empty structures as placeholders for dynamic theming.
-      scales: {
-        x: { display: displaylabel },
-        y: {
-          min: 10
+          }
+          if (type == 'SKU') {
+            this.top10 = await this.countTop10Outlet(res);
+            this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+            this.barChartData.datasets = [{
+              data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+              label: 'TOTAL ' + type,
+              backgroundColor: [background_1]
+            }]
+
+          }
+        } else {
+          this.top10 = [];
+          this.barChartData.labels = [];
+          this.barChartData.datasets = [{
+            data: [],
+            label: 'TOTAL ' + type,
+            backgroundColor: [background_1]
+          }]
         }
-      },
-      plugins: {
-        legend: {
-          display: true,
-        },
-        datalabels: {
-          display: false,
-          anchor: 'end',
-          align: 'end'
-        }
+      });
+
+      //COMPARE LAST MONTH GET PERCENT
+      await this.getReport(prevMonthFirstDay, prevMonthLastDay,type, names).then(async (res2: any) => {
+        let tmpsalestop3 = await this.countTop10Outlet(res2);
+        this.calculateListPercent(tmpsalestop3,this.top10);
+        //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
+      })
+      break;
+  }
+  this.barChartOptions = {
+    responsive: true,
+    // We use these empty structures as placeholders for dynamic theming.
+    scales: {
+      x: { display: displaylabel },
+      y: {
+        min: 10
       }
-    };
+    },
+    plugins: {
+      legend: {
+        display: true,
+      },
+      datalabels: {
+        display: false,
+        anchor: 'end',
+        align: 'end'
+      }
+    }
+  };
 
-    this.charts.forEach((child) => {
-      child.chart.update()
-    });
-    this.loadingController.dismiss();
+  this.charts.forEach((child) => {
+    child.chart.update()
+  });
+  this.loadingController.dismiss();
   }
 
   async segmentChanged2(tabs) {
@@ -685,7 +705,7 @@ export class Tab1Page {
         // let prevMonthFirstDayUnformat = moment(this.unformatcurrentDate).subtract(1, 'months').startOf('month').format('DD');
         let prevMonthLastDay = moment(this.unformatcurrentDate).subtract(1, 'months').endOf('month').format('YYMMDD');
         let LastDay = Number(moment(this.unformatcurrentDate).subtract(1, 'months').endOf('month').format('DD'));
-        let today = Number(moment(this.unformatcurrentDate).format('DD'));
+        let today = Number(moment(this.unformatcurrentDate).endOf('month').format('DD'));
 
         //NORMAL OPERATION
         await this.getReport(monthstart, monthend, 'SALES', names).then(async (res: any) => {
@@ -695,6 +715,16 @@ export class Tab1Page {
             this.txt_avgtrx = await this.countAvgTrx();
           }
         });
+        //COMPARE LAST WEEK GET PERCENT
+        await this.getReport(prevMonthFirstDay, prevMonthLastDay, 'SALES', names).then(async (res2: any) => {
+          let temporaryStoreSales = await parseFloat(this.countTotalSales(res2));
+          let temporaryTrx = await this.countTotalTrx(res2);
+         
+
+          this.cuculatePercentWeek(temporaryStoreSales, temporaryTrx, this.txt_totalsales, this.txt_totaltrx);
+          console.log(this.txt_totalsales, temporaryStoreSales)
+        })
+
         let tmpMonthTotal: any = [];
         let tmpMonthDate: any = [];
         let tmplastMonthTotal: any = [];
@@ -709,23 +739,15 @@ export class Tab1Page {
         }
 
         for (let a = 0; a < today; a++) {
-          let tmpdate = moment(this.unformatcurrentDate).subtract(a, "days").format('YYMMDD');
-          tmpMonthDate.push(moment(this.unformatcurrentDate).subtract(a, "days").format('DD'));
+          let tmpdate = moment(this.unformatcurrentDate).endOf('month').subtract(a, "days").format('YYMMDD');
+          tmpMonthDate.push(moment(this.unformatcurrentDate).endOf('month').subtract(a, "days").format('DD'));
 
           await this.getReport(tmpdate, tmpdate, 'SALES', names).then(async (res3: any) => {
             tmpMonthTotal.push(await parseFloat(this.countTotalSales(res3)));
           });
-          console.log('this month everyday total',tmpdate,tmpMonthDate)
+          console.log('this month everyday total',tmpMonthDate)
         }
-
-        //checking test
-        // let tmpmonth :any= [];
-        // for(let x = 0; x < month ;x++){
-        //   //tmpmonth.push(moment(this.unformatcurrentDate).subtract(x, 'months').format('MMM'));
-        //   console.log('this month',tmpmonth)
-        // }        //check test
-        //checking test
-
+    
         this.ChartData.labels = tmpMonthDate.reverse();
         this.ChartData.datasets = [{
           data: tmpMonthTotal.reverse(),
@@ -1087,10 +1109,11 @@ export class Tab1Page {
 
   datepicker(date) {
     this.unformatcurrentDate = moment(date).format('YYYY-MM-DD');
+    this.unformatcurrentDateNext = moment().add(1, 'year').format('YYYY-MM-DD');
     this.currentDate = moment(date).format('YYMMDD');
     this.getAllsales();
     this.segmentChanged(this.currentRange);
-    console.log(this.currentRange)
+    console.log("check",this.unformatcurrentDateNext)
     this.segmentChanged2(this.currentRange2);
     console.log(this.currentRange2)
   }

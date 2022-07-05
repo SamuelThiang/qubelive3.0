@@ -7,37 +7,62 @@
     </ion-toolbar>
   </ion-header>
 
-  <div style="width: 100px;margin: auto;padding-top: 20px;">
-    <img src="assets/img/profile.png">
+  <div style="width: 100px;margin: auto;padding-top: 45px;">
+    <img src="assets/img/person.svg">
   </div>
-  <ion-card>
-    <ion-list>
+
+  <ion-card style="box-shadow: none;margin-top: 2em;">
+    <ion-list lines="none">
       <ion-item>
-        <ion-label position="stacked">
-          EMAIL :
+        <ion-label position="stacked" class="label">
+          Email/Username
         </ion-label>
-        <ion-input>{{inputUser}}</ion-input>
+        <p class="inputstyle">{{inputUser}}</p>
+      </ion-item>
+      <ion-item style="margin-top:-10px;">
+        <ion-label position="stacked" class="label">
+          Password
+        </ion-label>
+        <ion-input class="inputstyle2" type="password" readonly [value]="inputPass"></ion-input>
       </ion-item>
       <ion-item>
-        <ion-label position="stacked">
-          PASSWORD :
+        <ion-label position="stacked" class="label">
+          Expire Date
         </ion-label>
-        <ion-input type="password" readonly [value]="inputPass"></ion-input>
+        <p class="inputstyle">{{inputExpireDate}}</p>
       </ion-item>
-      <ion-item>
-        <ion-label position="stacked">
-          EXPIRE DATE :
+      <ion-item style="margin-top:-10px;">
+        <ion-label position="stacked" class="label">
+         App Version
         </ion-label>
-        <ion-input>{{inputExpireDate}}</ion-input>
+        <p class="inputstyle">{{inputAppVer}}</p>
       </ion-item>
-      <ion-item>
-        <ion-label position="stacked">
-          APP VERSION :
-        </ion-label>
-        <ion-input>{{inputAppVer}}</ion-input>
-      </ion-item>
-    </ion-list>
+    </ion-list> 
+  
+  <p size="default" class="submit" type="submit"(click)="changePass()">Change Password</p>
+  <p size="default" class="logout" type="submit" (click)="logout()">Logout</p>
   </ion-card>
-  <ion-button size="default" color="tertiary" expand="block" type="submit" margin="10px" (click)="changePass()">CHANGE PASSWORD</ion-button>
-  <ion-button size="default" color="danger" expand="block" type="submit" margin="10px" (click)="logout()">LOGOUT</ion-button>
+  <!-- <div style="width: 100px;margin: auto;padding-top: 20px;">
+      <img src="assets/img/profile.png">
+  </div>
+
+    <div class="form">
+        <label>Email/Username</label>
+        <input type="text">{{inputUser}}
+
+        <label>Password</label>
+        <input type="password" placeholder="">
+
+        <label>Expire Date</label>
+        <input type="datetime-local" placeholder="2022/09/14">
+
+        <label>App Version</label>
+        <input type="number" placeholder="2.0.0">
+    </div>
+
+    <div class="button">
+        <a class="submit" href="">Change Password</a><br><br>
+        <a class="logout" href="">Logout</a>
+    </div> -->
+
 </ion-content>
