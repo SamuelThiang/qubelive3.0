@@ -3,6 +3,7 @@ import { Component, OnInit,Input } from '@angular/core';
 import { AlertController, ModalController, NavController, ToastController } from '@ionic/angular';
 import { BubbleController } from 'chart.js';
 import { Device } from '@awesome-cordova-plugins/device/ngx';
+import { baseColors } from 'ng2-charts';
 
 
 @Component({
@@ -57,22 +58,32 @@ export class FilteroutletPage implements OnInit {
     if(storeFilterStatus >= 20 || storeFilterFavorities>=20 ){
       this.presentToast('Max 20 Outlet!')
     }else{
-      if(this.storeList[i].id != this.filterTerm)
+
+      if(this.filterTerm == ''){
+        this.storeList[i].status = true;
+        this.storeList[i].id = this.storeList[i].name
+        this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
+          return item['id'];
+        });
+        console.log(" this.storelist" ,this.storelist)
+        return;
+      }
+
+      if(this.storeList[i].id !== this.filterTerm)
       {
         this.storeList[i].id = this.filterTerm
         store.id = this.storeList[i].id
         store.status = true;
-        //console.log("check value change",store)
+        this.filterTerm = "";
+        this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
+          return item['id'];
+        }); 
+        return;  
       }
-      this.storeList[i].status = true;
-      this.storeList[i].id = this.storeList[i].name
-      this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
-        return item['id'];
-      });
-    }
     console.log("check i",i)
     //console.log("store",store)
   }
+}
 
   addFlavorite(i,store)
   {
@@ -80,21 +91,29 @@ export class FilteroutletPage implements OnInit {
     if(storeFilterStatus >= 20 || storeFilterFavorities>=20 ){
       this.presentToast('Max 10 Outlet!')
     }else{
-      if(this.storeList[i].id != this.filterTerm)
+      if(this.filterTerm == ''){
+        this.storeList[i].flavorite = true;
+        this.storeList[i].id = this.storeList[i].name
+        this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
+          return item['id'];
+        }); 
+        console.log(" this.storelist" ,this.storelist)
+        return;
+      }
+      if(this.storeList[i].id !== this.filterTerm)
       {
         this.storeList[i].id = this.filterTerm
         store.id = this.storeList[i].id
         store.flavorite = true;
-        //console.log("check value change",store)
+        this.filterTerm = "";
+        console.log("check value change",store)
+        this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
+          return item['id'];
+        });  
+        return;  
       }
-      this.storeList[i].flavorite = true;
-      this.storeList[i].id = this.storeList[i].name
-      this.storelist = this.storeList.filter(x=>x.flavorite == true).map((item) => {
-        return item['id'];
-      });
     }
-    //console.log("storeFavorities",store)
-    console.log("storeFavorities",this.storeList)
+    console.log("storeFavorities",i)
   }
 
   done(){

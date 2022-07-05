@@ -1,3 +1,39 @@
 mat-form-field{
     border-radius: 20px !important;
 }
+.username{
+    width: 288px;
+    background: #FFFFFF;
+    border: 1px solid #DCDADC;
+    border-radius: 5px;
+    font-weight: 400;
+    font-size: 14px;
+    margin-bottom: 1em;
+    text-align: left;
+    padding: 0.8em 0.9em 0.8em 0.9em;
+    color: #636464;
+}
+
+.submit
+{
+    cursor: pointer;
+    border-radius: 5em;
+    color: #fff;
+    background: #BE2025;
+    padding: 10px 43%;
+    font-size: 16px;
+    position: relative;
+    top: 3em;
+    margin-bottom: 30%;
+    
+}
+
+.submit:hover{
+    background-color: #E4232B;
+}
+.remember{
+    font-weight: 400;
+    font-size: 15px;
+    color: #202020;
+    position: relative;
+}
