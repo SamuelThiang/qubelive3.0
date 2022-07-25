@@ -44,7 +44,7 @@
               <img src="assets/img/user.svg">
              </div>
              <div class="hi">
-                 <p style="margin:0">Hi Allen</p>
+                 <p style="margin:0">Hi {{inputUser}}</p>
              </div>
         </div>  
 
@@ -105,7 +105,7 @@
               </div>
               <div style="padding-top:20px">
                 <p style="display:inline-block;font-size:15px;color:#636464;padding-right: 10px;">{{currencyValue}}</p>
-                <p style="color:#202020;font-size:32px;display:inline-block;">{{fx_txt_avgtrx.toFixed(2).toLocaleString('en-US',
+                <p style="color:#202020;font-size:32px;display:inline-block;">{{fx_txt_avgtrx.toLocaleString('en-US',
                   {minimumFractionDigits: 2})}}</p>
               </div>
             </ion-card>
@@ -155,7 +155,7 @@
               </div>
               <div style="padding-top:20px">
                 <p style="display:inline-block;font-size:15px;color:#636464;padding-right: 10px;">{{currencyValue}}</p>
-                <p style="color:#202020;font-size:32px;display:inline-block;">{{txt_avgtrx.toFixed(2).toLocaleString('en-US',
+                <p style="color:#202020;font-size:32px;display:inline-block;">{{txt_avgtrx.toLocaleString('en-US',
                   {minimumFractionDigits: 2})}} </p>
               </div>
             </ion-card>

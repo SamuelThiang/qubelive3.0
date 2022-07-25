@@ -205,6 +205,7 @@ export class Tab1Page {
 
   async getAllsales() {
     this.presentLoading();
+    console.log("all sales loading")
     let canvas: HTMLCanvasElement = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     var background_1 = ctx.createLinearGradient(0, 0, 0, 600);
@@ -217,28 +218,41 @@ export class Tab1Page {
     var names = this.storeList.filter(res => res.status == true || res.flavorite == true).map((item) => {
       return item['value'];
     });
-
+   
     this.txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
     this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
-
+ 
     //Get Top SALES
     await this.getReport(this.currentDate, this.currentDate, 'SALES', names).then(async (res: any) => {
+      if(res.length === 0)
+      {
+        this.fx_txt_totalsales = await parseFloat(this.countTotalSales(res));
+        this.fx_txt_totaltrx = await this.countTotalTrx(res);
+        this.fx_txt_avgtrx = await parseFloat(this.countfxAvgTrx());
+        this.txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
+        
+      }
+      else
+      {
       this.fx_txt_totalsales = await parseFloat(this.countTotalSales(res));
       this.fx_txt_totaltrx = await this.countTotalTrx(res);
-      this.fx_txt_avgtrx = await this.countfxAvgTrx();
+      this.fx_txt_avgtrx = await parseFloat(this.countfxAvgTrx());
+      //console.log(this.fx_txt_avgtrx)
       this.txt_topOutlet = await this.countTopOutlet(res);
+      console.log(this.txt_topOutlet)
       this.top10 = await this.countTop10Outlet(res);
 
+      //console.log("fx_txt_avgtrx",this.fx_txt_avgtrx)
       this.barChartData.labels = this.top10.map((label) => { return label['Desc'] });
       this.barChartData.datasets = [{
         data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
         label: 'TOTAL SALES',
         backgroundColor: [background_1]
       }]
-      console.log(this.currentDate, this.currentDate, 'SALES', names)
-    });
+     // console.log(this.currentDate, this.currentDate, 'SALES', names)
+    }});
 
     //COMPARE LAST DAY GET PERCENT
     await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
@@ -247,8 +261,8 @@ export class Tab1Page {
         let tmptrx = await this.countTotalTrx(res2);
         let tmpsalestop3 = this.countTop10Outlet(res2);
         
-
         this.cuculatePercent(tmpsales, tmptrx, this.fx_txt_totalsales, this.fx_txt_totaltrx);
+
         this.calculateListPercent(tmpsalestop3,this.top10);
         this.ChartData.labels = [this.unformatcurrentDate];
         this.ChartData.datasets = [{
@@ -276,28 +290,52 @@ export class Tab1Page {
 
     //Get Top DEPTARTMENT
     await this.getReport(this.currentDate, this.currentDate, 'DEPARTMENT', names).then(async (res: any) => {
-      this.txt_topDept = await this.getTopDepart(res);
+      if(res.length === 0)
+      {
+        this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
+      }
+      else
+      {
+        this.txt_topDept = await this.getTopDepart(res);
+      }
+      console.log(this.txt_topDept)
     });
     //Get Top Sku
     await this.getReport(this.currentDate, this.currentDate, 'SKU', names).then(async (res: any) => {
       if (res) {
+        if(res.length === 0)
+        {
+          this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
+        }
+        else
+        {
         this.txt_topSku = await this.getTopSku(res);
+        }
       }
     });
     //Get Top Hour
     await this.getReport(this.currentDate, this.currentDate, 'HOURLY', names).then(async (res: any) => {
+      if(res.length === 0)
+      {
+        this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
+      }
+      else
+      {
       this.txt_topHour = await this.getTopHour(res);
       this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+      }
     });
 
     this.charts.forEach((child) => {
       child.chart.update()
     });
     this.loadingController.dismiss();
+    console.log("sales dissmiss")
   }
 
   async segmentChanged(tabs) {
     this.presentLoading();
+    console.log("segment loading")
     let canvas: HTMLCanvasElement = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
     var background_1 = ctx.createLinearGradient(0, 0, 0, 600);
@@ -331,67 +369,109 @@ export class Tab1Page {
         let tmptotalsales;
         this.DateTimeSwitch = this.unformatcurrentDate;
 
-
         //NORMAL OPERATION
         await this.getReport(this.currentDate, this.currentDate, type, names).then(async (res: any) => {
-          
-          if (res) {
+          if(res){
             if (type == 'SALES') 
             {
-              this.top10 = await this.countTop10Outlet(res);
-              this.txt_topOutlet = await this.countTopOutlet(res);
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
-              // //COMPARE LAST DAY GET PERCENT
-              // await this.getReport(yesterday, yesterday, 'SALES', names).then(async (res2: any) => {
-              //   if (res2) {
-              //     let tmpsales = await parseFloat(this.countTotalSales(res2));
-              //     let tmptrx = await this.countTotalTrx(res2);
-              //     let tmpsalestop3 = this.countTop10Outlet(res2);
-                  
-
-              //    // this.cuculatePercent(tmpsales, tmptrx, this.fx_txt_totalsales, this.fx_txt_totaltrx);
-              //     this.calculateListPercent(tmpsalestop3,this.top10);
-              //   }
-              // })
+              if(res.length === 0)
+              {
+                this.txt_topOutlet = { Desc: '-', Code: '-', Net: 0.00 };
+                this.top10 = [];
+                this.barChartData.labels = [];
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
+              else
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                this.txt_topOutlet = await this.countTopOutlet(res);
+                this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
             }
             if (type == 'HOURLY') {
-              this.top10 = await this.countTop10Outlet(res);
-              var top10h = await this.countTop10Hour(res);
-              this.txt_topHour = await this.getTopHour(res);
-              this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
-              this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("h a") : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: top10h.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
+              if(res.length === 0)
+              {
+                this.top10 = [];
+                var top10h = [];
+                this.txt_topHour = { Desc: '-', Code: '-', Net: 0.00 };
+                this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("h a") : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: top10h.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
+              else
+              {
+                this.top10 = await this.countTop10Outlet(res);
+                var top10h = await this.countTop10Hour(res);
+                this.txt_topHour = await this.getTopHour(res);
+                this.txt_topHour.Code = moment(this.txt_topHour.Code, ["HH.mm"]).format("hh:mm a");
+                this.barChartData.labels = top10h.map((label) => { return type == 'HOURLY' ? moment(label.Code, ["HH.mm"]).format("h a") : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: top10h.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+             }
             }
             if (type == 'DEPARTMENT') {
-              this.txt_topDept = await this.getTopDepart(res);
-              this.top10 = await this.countTop10Outlet(res);
-
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
+              if(res.length === 0)
+              {
+                this.top10 = [];
+                this.txt_topDept = { Desc: '-', Code: '-', Net: 0.00 };
+                this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
+              else
+              {
+                this.txt_topDept = await this.getTopDepart(res);
+                this.top10 = await this.countTop10Outlet(res);
+                this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
             }
             if (type == 'SKU') {
-              this.txt_topSku = await this.getTopSku(res);
-              this.top10 = await this.countTop10Outlet(res);
+              if(res.length === 0)
+              {
+                this.top10 = [];
+                this.txt_topSku = { Desc: '-', Code: '-', Net: 0.00 };
+                this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+              }
+              else
+              {
+                this.txt_topSku = await this.getTopSku(res);
+                this.top10 = await this.countTop10Outlet(res);
 
-              this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
-              this.barChartData.datasets = [{
-                data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
-                label: 'TOTAL ' + type,
-                backgroundColor: [background_1]
-              }]
+                this.barChartData.labels = this.top10.map((label) => { return type == 'HOURLY' ? label['Code'] : label['Desc'] });
+                this.barChartData.datasets = [{
+                  data: this.top10.map((label) => { return label['Net'].toFixed(2) }),
+                  label: 'TOTAL ' + type,
+                  backgroundColor: [background_1]
+                }]
+             }
             }
           } else {
             this.top10 = [];
@@ -583,7 +663,8 @@ export class Tab1Page {
         //console.log(tmpsales, tmptrx, this.txt_totalsales, this.txt_totaltrx)
       })
       break;
-  }
+  
+    }
   this.barChartOptions = {
     responsive: true,
     // We use these empty structures as placeholders for dynamic theming.
@@ -609,10 +690,12 @@ export class Tab1Page {
     child.chart.update()
   });
   this.loadingController.dismiss();
+  console.log('Loading dismissed top10! ');
   }
 
   async segmentChanged2(tabs) {
     this.presentLoading();
+    console.log("segment2 loading")
     var names = this.storeList.filter(res => res.status == true || res.flavorite == true).map((item) => {
       return item['value'];
     });
@@ -633,7 +716,8 @@ export class Tab1Page {
           if (res) {
             this.txt_totalsales = await parseFloat(this.countTotalSales(res));
             this.txt_totaltrx = await this.countTotalTrx(res);
-            this.txt_avgtrx = await this.countAvgTrx();
+            this.txt_avgtrx = await parseFloat(this.countAvgTrx());
+            console.log("check",this.txt_avgtrx)
           }
         });
         break;
@@ -647,7 +731,7 @@ export class Tab1Page {
           if (res) {
             this.txt_totalsales = await parseFloat(this.countTotalSales(res));
             this.txt_totaltrx = await this.countTotalTrx(res);
-            this.txt_avgtrx = await this.countAvgTrx();
+            this.txt_avgtrx = await parseFloat(this.countAvgTrx());
             this.txt_topsalesWeekly = await this.countTop10Outlet(res);
           }
         });
@@ -712,7 +796,7 @@ export class Tab1Page {
           if (res) {
             this.txt_totalsales = await parseFloat(this.countTotalSales(res));
             this.txt_totaltrx = await this.countTotalTrx(res);
-            this.txt_avgtrx = await this.countAvgTrx();
+            this.txt_avgtrx = await parseFloat(this.countAvgTrx());
           }
         });
         //COMPARE LAST WEEK GET PERCENT
@@ -788,7 +872,7 @@ export class Tab1Page {
           if (res) {
             this.txt_totalsales = await parseFloat(this.countTotalSales(res));
             this.txt_totaltrx = await this.countTotalTrx(res);
-            this.txt_avgtrx = await this.countAvgTrx();
+            this.txt_avgtrx = await parseFloat(this.countAvgTrx());
           }
         });
 
@@ -839,6 +923,7 @@ export class Tab1Page {
       child.chart.update()
     });
     this.loadingController.dismiss();
+    console.log('Loading dismissed graph! ');
   }
 
   changeType(type) {
@@ -933,6 +1018,17 @@ export class Tab1Page {
   cuculatePercent(tmpsales, tmptrx, currentsales, currenttrx){
     this.salespercent = parseInt((((currentsales-tmpsales)/tmpsales)*100).toString());
     this.trxpercent = parseInt((((currenttrx-tmptrx)/tmptrx)*100).toString());
+    if(isNaN(this.salespercent) || isNaN(this.trxpercent))
+    {
+      this.salespercent = 0;
+      this.trxpercent = 0;
+    }
+    else
+    {
+      this.salespercent = parseInt((((currentsales-tmpsales)/tmpsales)*100).toString());
+      this.trxpercent = parseInt((((currenttrx-tmptrx)/tmptrx)*100).toString());
+    }
+    
   }
 
   cuculatePercentWeek(temporaryStoreSales, temporaryTrx, SalesThisWeek, TrxThisWeek) {
@@ -950,11 +1046,30 @@ export class Tab1Page {
   }
 
   countAvgTrx() {
-    return (this.txt_totalsales / this.txt_totaltrx);
+    let sumAvgTrx = this.txt_totalsales / this.txt_totaltrx
+    if(isNaN(parseFloat("sumAvgTrx")))
+    {
+      sumAvgTrx = 0;
+    }
+    else
+    {
+      sumAvgTrx = this.txt_totalsales / this.txt_totaltrx
+    }
+    return (this.txt_totalsales / this.txt_totaltrx).toFixed(2);
   }
 
   countfxAvgTrx() {
-    return (this.fx_txt_totalsales / this.fx_txt_totaltrx);
+    let sumfxAvgTrx = this.fx_txt_totalsales / this.fx_txt_totaltrx
+    if(isNaN(sumfxAvgTrx))
+    {
+      sumfxAvgTrx = 0;
+      return sumfxAvgTrx.toFixed(2);
+    }
+    else
+    {
+      return sumfxAvgTrx.toFixed(2);
+    }
+   
   }
 
   countTotalSales(res) {
@@ -1016,20 +1131,23 @@ export class Tab1Page {
     return sumPerMonth
   }
 
-  countTopOutlet(res) {
+  countTopOutlet(res) 
+  {
     var result = [];
-    res.reduce((res, value) => {
-      if (!res[value.Code]) {
-        res[value.Code] = { Desc: value.Desc, Code: value.Code, Net: 0 };
-        result.push(res[value.Code])
-      }
-      res[value.Code].Net += parseFloat(value.Net);
-      return res;
-    }, {});
-    let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
-    final.Net = final.Net.toLocaleString('en-US', { minimumFractionDigits: 2 })
-    return final;
+
+      res.reduce((res, value) => {
+        if (!res[value.Code]) {
+          res[value.Code] = { Desc: value.Desc, Code: value.Code, Net: 0 };
+          result.push(res[value.Code])
+        }
+        res[value.Code].Net += parseFloat(value.Net);
+        return res;
+      }, {});
+      let final = result.reduce((prev, current) => (prev.Net > current.Net) ? prev : current);
+      final.Net = final.Net.toLocaleString('en-US', { minimumFractionDigits: 2 })
+      return final;
   }
+  
 
   countTop10Outlet(res) {
     var result = [];
@@ -1109,7 +1227,7 @@ export class Tab1Page {
 
   datepicker(date) {
     this.unformatcurrentDate = moment(date).format('YYYY-MM-DD');
-    this.unformatcurrentDateNext = moment().add(1, 'year').format('YYYY-MM-DD');
+    this.unformatcurrentDateNext = moment().format('YYYY-MM-DD');
     this.currentDate = moment(date).format('YYMMDD');
     this.getAllsales();
     this.segmentChanged(this.currentRange);
