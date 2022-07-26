@@ -1034,6 +1034,16 @@ export class Tab1Page {
   cuculatePercentWeek(temporaryStoreSales, temporaryTrx, SalesThisWeek, TrxThisWeek) {
     this.salespercentWeek =parseInt((((SalesThisWeek-temporaryStoreSales)/temporaryStoreSales)*100).toString());
     this.trxpercentWeek = parseInt((((TrxThisWeek-temporaryTrx)/temporaryTrx)*100).toString());
+    if(isNaN(this.salespercentWeek) || isNaN(this.trxpercentWeek))
+    {
+      this.salespercentWeek = 0;
+      this.trxpercentWeek=0;
+    }
+    else
+    {
+      this.salespercentWeek =parseInt((((SalesThisWeek-temporaryStoreSales)/temporaryStoreSales)*100).toString());
+      this.trxpercentWeek = parseInt((((TrxThisWeek-temporaryTrx)/temporaryTrx)*100).toString());
+    }
   }
 
   countTotalTrx(res) {
@@ -1041,21 +1051,20 @@ export class Tab1Page {
     for (let i of res) {
       countTrx = countTrx + parseInt(i.Trx);
     }
-    //console.log("totaltrxx",countTrx)
     return countTrx;
   }
 
   countAvgTrx() {
     let sumAvgTrx = this.txt_totalsales / this.txt_totaltrx
-    if(isNaN(parseFloat("sumAvgTrx")))
+    if(isNaN(sumAvgTrx))
     {
       sumAvgTrx = 0;
+      return sumAvgTrx.toFixed(2);
     }
     else
     {
-      sumAvgTrx = this.txt_totalsales / this.txt_totaltrx
+      return sumAvgTrx.toFixed(2);
     }
-    return (this.txt_totalsales / this.txt_totaltrx).toFixed(2);
   }
 
   countfxAvgTrx() {
